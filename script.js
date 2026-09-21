@@ -564,7 +564,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-abrir-camera').addEventListener('click', async () => {
         try {
-            streamCamera = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+    streamCamera = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: { exact: "environment" } } 
+        });
             video.srcObject = streamCamera;
             cameraBox.style.display = 'block';
             video.style.display = 'block';
