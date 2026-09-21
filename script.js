@@ -370,7 +370,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (statusServico === 'true') resetarTimerRonda();
     });
 
-    // 🛠️ Adicionado suporte funcional para os botões extras do Menu Dev que faltavam:
     const btnDev10s = document.getElementById('btn-dev-10s');
     if (btnDev10s) {
         btnDev10s.addEventListener('click', () => {
