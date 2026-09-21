@@ -63,6 +63,27 @@
                     </select>
                 </div>
 
+                <!-- Configurações de Geofencing -->
+                <div style="border-top: 1px solid #333; padding-top: 10px; margin-top: 10px;">
+                    <label style="color: var(--cor-aviso); font-size: 0.8rem; font-weight: bold;">📍 Configurar Geofencing (Posto):</label>
+                    
+                    <button id="btn-capturar-geo-atual" class="btn-secondary btn-success" style="width: 100%; padding: 8px; font-size: 0.78rem; margin: 6px 0 8px 0;">🎯 Capturar Localização Atual do GPS</button>
+
+                    <div class="form-group" style="margin-top: 5px;">
+                        <label style="font-size: 0.75rem;">Latitude do Posto:</label>
+                        <input type="text" id="dev-lat-posto" placeholder="Ex: -23.550520">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.75rem;">Longitude do Posto:</label>
+                        <input type="text" id="dev-lng-posto" placeholder="Ex: -46.633308">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.75rem;">Raio Permitido (Metros):</label>
+                        <input type="number" id="dev-raio-posto" value="200">
+                    </div>
+                    <button id="btn-salvar-geofencing" class="btn-secondary btn-success" style="width: 100%; padding: 8px; font-size: 0.78rem; margin-bottom: 8px;">💾 Salvar Coordenadas do Posto</button>
+                </div>
+
                 <div class="form-group">
                     <button id="btn-dev-toggle-manutencao" class="btn-secondary btn-danger" style="width: 100%; padding: 10px; font-size: 0.8rem;">🔴 Ativar/Desativar Standby</button>
                 </div>
@@ -140,31 +161,30 @@
                         <select id="seletor-data-historico" style="padding: 6px; font-size: 0.75rem;"></select>
                     </div>
                 </div>
-<!-- Bloco de Salário e Metas -->
-<section class="card" style="background: #0d0e15; padding: 18px; border-radius: 14px; margin-bottom: 15px; border: 1px solid #1a1c29;">
-    <h2 style="font-size: 0.95rem; margin-bottom: 12px; color: #39ff14; text-transform: uppercase; letter-spacing: 1.5px;">💰 Controle de Salário e Metas</h2>
-    
-    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem; color: #8a99ad;">
-        <span>Plantões Realizados: <strong id="total-plantoes" style="color: #fff;">0</strong></span>
-        <span>Valor por Plantão: <strong id="txt-valor-plantao" style="color: #39ff14;">R$ 100,00</strong></span>
-    </div>
 
-    <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.85rem; color: #8a99ad;">
-        <span>Total Acumulado: <strong id="total-salario" style="color: #39ff14; font-size: 1.1rem;">R$ 0,00</strong></span>
-        <span>Meta: <strong id="txt-meta-salario" style="color: #00f0ff;">R$ 1.000,00</strong></span>
-    </div>
+                <!-- Bloco de Salário e Metas -->
+                <section class="card" style="background: #0d0e15; padding: 18px; border-radius: 14px; margin-bottom: 15px; border: 1px solid #1a1c29;">
+                    <h2 style="font-size: 0.95rem; margin-bottom: 12px; color: #39ff14; text-transform: uppercase; letter-spacing: 1.5px;">💰 Controle de Salário e Metas</h2>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem; color: #8a99ad;">
+                        <span>Plantões Realizados: <strong id="total-plantoes" style="color: #fff;">0</strong></span>
+                        <span>Valor por Plantão: <strong id="txt-valor-plantao" style="color: #39ff14;">R$ 100,00</strong></span>
+                    </div>
 
-    <!-- Barra de Progresso da Meta -->
-    <div style="width: 100%; background: #1a1c29; border-radius: 10px; height: 10px; overflow: hidden; margin-bottom: 12px;">
-        <div id="barra-progresso-meta" style="width: 0%; height: 100%; background: linear-gradient(90deg, #39ff14, #00f0ff); transition: width 0.4s ease;"></div>
-    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.85rem; color: #8a99ad;">
+                        <span>Total Acumulado: <strong id="total-salario" style="color: #39ff14; font-size: 1.1rem;">R$ 0,00</strong></span>
+                        <span>Meta: <strong id="txt-meta-salario" style="color: #00f0ff;">R$ 1.000,00</strong></span>
+                    </div>
 
-    <!-- Botões de Ajuste -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-        <button id="btn-ajustar-valor" class="btn-secondary" style="padding: 8px; font-size: 0.78rem;">⚙️ Ajustar R$ Plantão</button>
-        <button id="btn-ajustar-meta" class="btn-secondary" style="padding: 8px; font-size: 0.78rem;">🎯 Ajustar Meta</button>
-    </div>
-</section>
+                    <div style="width: 100%; background: #1a1c29; border-radius: 10px; height: 10px; overflow: hidden; margin-bottom: 12px;">
+                        <div id="barra-progresso-meta" style="width: 0%; height: 100%; background: linear-gradient(90deg, #39ff14, #00f0ff); transition: width 0.4s ease;"></div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <button id="btn-ajustar-valor" class="btn-secondary" style="padding: 8px; font-size: 0.78rem;">⚙️ Ajustar R$ Plantão</button>
+                        <button id="btn-ajustar-meta" class="btn-secondary" style="padding: 8px; font-size: 0.78rem;">🎯 Ajustar Meta</button>
+                    </div>
+                </section>
 
                 <div id="lista-registros" class="lista-registros"></div>
 
@@ -190,6 +210,7 @@
         </footer>
     </div>
 
+    <!-- Script único correspondente -->
     <script src="script.js"></script>
 </body>
 </html>
