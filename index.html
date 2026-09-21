@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="blue">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ponto Vigia Noturno Pro - Ultimate Edition</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Tela de Manutenção / Standby Protegida por Senha (3691) -->
+    <div id="tela-manutencao" class="tela-manutencao">
+        <div style="font-size: 3rem; margin-bottom: 15px;">🛠️</div>
+        <h2 style="color: var(--cor-secundaria); font-size: 1.5rem; margin-bottom: 10px;">APLICATIVO EM MANUTENÇÃO</h2>
+        <p style="color: #8a99ad; font-size: 0.9rem; max-width: 360px; line-height: 1.4; margin-bottom: 20px;">O sistema encontra-se temporariamente em standby para atualizações. Insira a senha de desenvolvedor para desbloquear.</p>
+        <button id="btn-desbloquear-manutencao" class="btn-secondary btn-danger" style="padding: 12px 20px; font-size: 0.9rem;">🔓 Digitar Senha (Admin)</button>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="status-sistema-topo">
+                <span id="info-conexao">🌐 Conectado</span>
+                <span id="info-bateria">🔋 Bateria: --%</span>
+            </div>
+            <div class="header-top">
+                <h1>Ponto Vigia Noturno</h1>
+                <button id="btn-menu-hamburguer" class="btn-hamburguer" title="Menu Dev / Config">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <div id="relogio" class="relogio-principal">00:00:00</div>
+            <div id="data" class="data-principal">--/--/----</div>
+            <div id="status-badge" class="status-badge status-inativo">⚪ FORA DE SERVIÇO</div>
+        </header>
+
+        <main>
+            <section class="card">
+                <h2 class="card-titulo-secundario">Controle do Plantão</h2>
+                <button id="btn-toggle-servico" class="btn-servico-toggle btn-iniciar-servico">▶️ ENTRAR EM SERVIÇO</button>
+            </section>
+
+            <section class="card">
+                <h2 class="card-titulo-secundario">Lembrete de Envio de Foto</h2>
+                <div id="ronda-card" class="ronda-card-box">
+                    <div>Próxima foto do grupo em:</div>
+                    <div id="ronda-timer" class="ronda-timer-txt">01:00:00</div>
+                    <button id="btn-confirmar-ronda" class="btn-secondary btn-success" style="width: 100%; padding: 12px; font-size: 0.85rem;">Confirmar Plantão</button>
+                </div>
+            </section>
+
+            <!-- MENU DEV -->
+            <section id="card-dev" class="card card-dev" style="display: none;">
+                <h2 style="font-size: 0.95rem; margin-bottom: 12px; color: var(--cor-aviso); text-transform: uppercase;">🛠️ Menu Dev <span style="background: var(--cor-aviso); color: #000; font-size: 0.65rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">CONFIG</span></h2>
+                
+                <div class="form-group">
+                    <label style="color: var(--cor-aviso);">Tema Visual:</label>
+                    <select id="dev-tema-select">
+                        <option value="blue">Neon Blue (Padrão)</option>
+                        <option value="green">Cyber Green</option>
+                        <option value="red">Crimson Red</option>
+                        <option value="gold">Amber Gold</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <button id="btn-dev-toggle-manutencao" class="btn-secondary btn-danger" style="width: 100%; padding: 10px; font-size: 0.8rem;">🔴 Ativar/Desativar Standby</button>
+                </div>
+
+                <div class="form-group">
+                    <label for="dev-tempo-ronda" style="color: var(--cor-aviso);">Tempo da Ronda (Segundos):</label>
+                    <input type="number" id="dev-tempo-ronda" value="3600">
+                </div>
+
+                <div class="btn-group-grid">
+                    <button id="btn-dev-10s" class="btn-secondary btn-warning">Ronda 10s</button>
+                    <button id="btn-dev-disparar" class="btn-secondary btn-warning">Simular Alerta</button>
+                </div>
+
+                <div class="btn-group-grid" style="margin-top: 8px;">
+                    <button id="btn-dev-exportar-json" class="btn-secondary btn-warning">📥 Baixar Backup JSON</button>
+                    <button id="btn-dev-importar-json" class="btn-secondary btn-warning">📤 Restaurar Backup</button>
+                    <input type="file" id="input-file-json" style="display: none;" accept=".json">
+                </div>
+
+                <div class="btn-group-grid" style="margin-top: 8px;">
+                    <button id="btn-dev-mock" class="btn-secondary btn-warning">Gerar Mock</button>
+                    <button id="btn-dev-reset" class="btn-secondary btn-danger">Resetar Tudo</button>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2 class="card-titulo-secundario">Identificação do Posto</h2>
+                <div class="form-group">
+                    <label for="nome-vigia">Nome do Vigia:</label>
+                    <input type="text" id="nome-vigia" placeholder="Ex: João da Silva">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="posto-trabalho">Posto / Local:</label>
+                    <input type="text" id="posto-trabalho" placeholder="Ex: Portaria Principal">
+                </div>
+            </section>
+
+            <section class="card">
+                <h2 class="card-titulo-secundario">Registrar Ocorrência</h2>
+                <div class="form-group">
+                    <label for="tipo-registro">Tipo de Marcação:</label>
+                    <select id="tipo-registro">
+                        <option value="Entrada de Serviço">Entrada de Serviço</option>
+                        <option value="Saída - Almoço">Saída - Almoço</option>
+                        <option value="Retorno - Almoço">Retorno - Almoço</option>
+                        <option value="Saída - Janta">Saída - Janta</option>
+                        <option value="Retorno - Janta">Retorno - Janta</option>
+                        <option value="No Médico / Atestado">No Médico / Atestado</option>
+                        <option value="Final de Expediente / Saída">Final de Expediente / Saída</option>
+                        <option value="Confirmar Plantão / Foto">Confirmar Plantão / Foto</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="observacao">Observação (Opcional):</label>
+                    <input type="text" id="observacao" placeholder="Ex: Ronda ok / Foto enviada no grupo">
+                </div>
+
+                <button id="btn-abrir-camera" class="btn-camera">📷 Ligar Câmera / Capturar Foto</button>
+                
+                <div id="camera-box" class="camera-box" style="display:none;">
+                    <video id="video" autoplay playsinline style="width:100%; max-height:200px; object-fit:cover;"></video>
+                    <canvas id="canvas" style="display:none; width:100%; max-height:200px; object-fit:cover;"></canvas>
+                    <button id="btn-capturar-foto" class="btn-secondary btn-success" style="width:100%; margin-top:5px; display:none;">📸 Tirar Foto</button>
+                </div>
+
+                <button id="btn-registrar" class="btn-primary">Bater Ponto Agora</button>
+            </section>
+
+            <section class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h2 class="card-titulo-secundario" style="margin: 0;">Registros do Turno</h2>
+                    <div class="form-group" style="margin: 0; width: 130px;">
+                        <select id="seletor-data-historico" style="padding: 6px; font-size: 0.75rem;"></select>
+                    </div>
+                </div>
+<!-- Bloco de Salário e Metas -->
+<section class="card" style="background: #0d0e15; padding: 18px; border-radius: 14px; margin-bottom: 15px; border: 1px solid #1a1c29;">
+    <h2 style="font-size: 0.95rem; margin-bottom: 12px; color: #39ff14; text-transform: uppercase; letter-spacing: 1.5px;">💰 Controle de Salário e Metas</h2>
+    
+    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem; color: #8a99ad;">
+        <span>Plantões Realizados: <strong id="total-plantoes" style="color: #fff;">0</strong></span>
+        <span>Valor por Plantão: <strong id="txt-valor-plantao" style="color: #39ff14;">R$ 100,00</strong></span>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.85rem; color: #8a99ad;">
+        <span>Total Acumulado: <strong id="total-salario" style="color: #39ff14; font-size: 1.1rem;">R$ 0,00</strong></span>
+        <span>Meta: <strong id="txt-meta-salario" style="color: #00f0ff;">R$ 1.000,00</strong></span>
+    </div>
+
+    <!-- Barra de Progresso da Meta -->
+    <div style="width: 100%; background: #1a1c29; border-radius: 10px; height: 10px; overflow: hidden; margin-bottom: 12px;">
+        <div id="barra-progresso-meta" style="width: 0%; height: 100%; background: linear-gradient(90deg, #39ff14, #00f0ff); transition: width 0.4s ease;"></div>
+    </div>
+
+    <!-- Botões de Ajuste -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <button id="btn-ajustar-valor" class="btn-secondary" style="padding: 8px; font-size: 0.78rem;">⚙️ Ajustar R$ Plantão</button>
+        <button id="btn-ajustar-meta" class="btn-secondary" style="padding: 8px; font-size: 0.78rem;">🎯 Ajustar Meta</button>
+    </div>
+</section>
+
+                <div id="lista-registros" class="lista-registros"></div>
+
+                <div class="btn-group-grid" style="margin-top: 10px;">
+                    <button id="btn-whatsapp" class="btn-secondary">Enviar WhatsApp</button>
+                    <button id="btn-excel" class="btn-secondary">Exportar CSV</button>
+                </div>
+                <div class="btn-group-grid" style="margin-top: 8px;">
+                    <button id="btn-imprimir" class="btn-secondary">Gerar PDF</button>
+                    <button id="btn-limpar" class="btn-secondary btn-danger">Limpar Turno</button>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div class="footer-links">
+                <a href="#" id="link-termos">Termos de Uso</a> • 
+                <a href="#" id="link-lgpd">Privacidade (LGPD)</a>
+            </div>
+            <div class="footer-copy">
+                Desenvolvido por <strong style="color: var(--cor-aviso);">Vítor Silva</strong>
+            </div>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
