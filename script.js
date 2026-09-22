@@ -190,25 +190,69 @@ setInterval(() => {
 // BLOCO 2: CONFIGURAÇÃO DE UI E MENU DEV COMPLETO
 // ==========================================
 
-// Função global para atualizar o cálculo de salário e metas
+// Função global para calcular salário, metas e a sequência (streak) de plantões
 window.atualizarCalculoSalario = function() {
     let valorPorPlantao = parseFloat(localStorage.getItem(CHAVE_VALOR_PLANTAO)) || 100.00;
     let metaSalario = parseFloat(localStorage.getItem(CHAVE_META_SALARIO)) || 1000.00;
     
     const registros = Storage.obter();
-    const plantoesRealizados = registros.filter(r => r.tipo && r.tipo.includes('Entrada de Serviço')).length;
+    const entradas = registros.filter(r => r.tipo && r.tipo.includes('Entrada de Serviço'));
+    const plantoesRealizados = entradas.length;
     const totalAcumulado = plantoesRealizados * valorPorPlantao;
+
+    // Cálculo da Sequência (Streak) de Plantões Consecutivos
+    let streakCount = 0;
+    if (entradas.length > 0) {
+        // Extrai datas únicas ordenadas da mais recente para a mais antiga
+        const datasUnicas = [...new Set(entradas.map(r => r.data))];
+        
+        // Função auxiliar para converter "DD/MM/AAAA" em objeto Date zerado
+        const parseDataBR = (strData) => {
+            const partes = strData.split('/');
+            return new Date(partes[2], partes[1] - 1, partes[0]);
+        };
+
+        if (datasUnicas.length > 0) {
+            let dataEsperada = parseDataBR(datasUnicas[0]);
+            let hoje = new Date();
+            hoje.setHours(0,0,0,0);
+            let ultimaData = parseDataBR(datasUnicas[0]);
+            ultimaData.setHours(0,0,0,0);
+
+            // Verifica se o último plantão ocorreu hoje ou ontem para manter o streak ativo
+            const diffDiasUltimo = Math.round((hoje - ultimaData) / (1000 * 60 * 60 * 24));
+            
+            if (diffDiasUltimo <= 1) {
+                streakCount = 1;
+                let dataChecagem = new Date(ultimaData);
+
+                for (let i = 1; i < datasUnicas.length; i++) {
+                    dataChecagem.setDate(dataChecagem.getDate() - 1);
+                    let dataAnteriorBanco = parseDataBR(datasUnicas[i]);
+                    dataAnteriorBanco.setHours(0,0,0,0);
+
+                    if (dataAnteriorBanco.getTime() === dataChecagem.getTime()) {
+                        streakCount++;
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+    }
 
     const elPlantoes = document.getElementById('total-plantoes');
     const elTxtValor = document.getElementById('txt-valor-plantao');
     const elTotalSalario = document.getElementById('total-salario');
     const elTxtMeta = document.getElementById('txt-meta-salario');
     const elBarra = document.getElementById('barra-progresso-meta');
+    const elStreak = document.getElementById('streak-plantoes'); // Elemento opcional de UI para o streak
 
     if (elPlantoes) elPlantoes.textContent = plantoesRealizados;
     if (elTxtValor) elTxtValor.textContent = `R$ ${valorPorPlantao.toFixed(2).replace('.', ',')}`;
     if (elTotalSalario) elTotalSalario.textContent = `R$ ${totalAcumulado.toFixed(2).replace('.', ',')}`;
     if (elTxtMeta) elTxtMeta.textContent = `R$ ${metaSalario.toFixed(2).replace('.', ',')}`;
+    if (elStreak) elStreak.textContent = streakCount;
 
     let progresso = metaSalario > 0 ? (totalAcumulado / metaSalario) * 100 : 0;
     if (progresso > 100) progresso = 100;
@@ -522,7 +566,6 @@ document.addEventListener('DOMContentLoaded', () => {
             seletorData.innerHTML = '<option value="">Sem datas</option>';
             lista.innerHTML = '<p style="text-align:center; color:#8a99ad; font-size:0.8rem; padding:15px;">Nenhum registro.</p>';
             
-            // Garante atualização do cálculo mesmo com lista vazia
             if (typeof window.atualizarCalculoSalario === 'function') {
                 window.atualizarCalculoSalario();
             }
@@ -562,7 +605,6 @@ document.addEventListener('DOMContentLoaded', () => {
             lista.appendChild(div);
         });
 
-        // ➡️ ATUALIZA O SALÁRIO E AS METAS SEMPRE QUE A TELA É RENDERIZADA
         if (typeof window.atualizarCalculoSalario === 'function') {
             window.atualizarCalculoSalario();
         }
@@ -666,7 +708,6 @@ document.addEventListener('DOMContentLoaded', () => {
         registrarPontoAutomatico(document.getElementById('tipo-registro').value, document.getElementById('observacao').value.trim());
         document.getElementById('observacao').value = '';
     });
-
     document.getElementById('btn-whatsapp').addEventListener('click', () => {
         const dataFiltro = document.getElementById('seletor-data-historico').value;
         const registros = Storage.obter().filter(r => r.data === dataFiltro);
