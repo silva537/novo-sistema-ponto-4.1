@@ -189,6 +189,32 @@ setInterval(() => {
 // ==========================================
 // BLOCO 2: CONFIGURAÇÃO DE UI E MENU DEV COMPLETO
 // ==========================================
+
+// Função global para atualizar o cálculo de salário e metas
+window.atualizarCalculoSalario = function() {
+    let valorPorPlantao = parseFloat(localStorage.getItem(CHAVE_VALOR_PLANTAO)) || 100.00;
+    let metaSalario = parseFloat(localStorage.getItem(CHAVE_META_SALARIO)) || 1000.00;
+    
+    const registros = Storage.obter();
+    const plantoesRealizados = registros.filter(r => r.tipo && r.tipo.includes('Entrada de Serviço')).length;
+    const totalAcumulado = plantoesRealizados * valorPorPlantao;
+
+    const elPlantoes = document.getElementById('total-plantoes');
+    const elTxtValor = document.getElementById('txt-valor-plantao');
+    const elTotalSalario = document.getElementById('total-salario');
+    const elTxtMeta = document.getElementById('txt-meta-salario');
+    const elBarra = document.getElementById('barra-progresso-meta');
+
+    if (elPlantoes) elPlantoes.textContent = plantoesRealizados;
+    if (elTxtValor) elTxtValor.textContent = `R$ ${valorPorPlantao.toFixed(2).replace('.', ',')}`;
+    if (elTotalSalario) elTotalSalario.textContent = `R$ ${totalAcumulado.toFixed(2).replace('.', ',')}`;
+    if (elTxtMeta) elTxtMeta.textContent = `R$ ${metaSalario.toFixed(2).replace('.', ',')}`;
+
+    let progresso = metaSalario > 0 ? (totalAcumulado / metaSalario) * 100 : 0;
+    if (progresso > 100) progresso = 100;
+    if (elBarra) elBarra.style.width = `${progresso}%`;
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     if ("Notification" in window && Notification.permission !== "granted") {
         Notification.requestPermission();
@@ -240,27 +266,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function atualizarCalculoSalario() {
-        const registros = Storage.obter();
-        const plantoesRealizados = registros.filter(r => r.tipo.includes('Entrada de Serviço')).length;
-        const totalAcumulado = plantoesRealizados * valorPorPlantao;
-
-        const elPlantoes = document.getElementById('total-plantoes');
-        const elTxtValor = document.getElementById('txt-valor-plantao');
-        const elTotalSalario = document.getElementById('total-salario');
-        const elTxtMeta = document.getElementById('txt-meta-salario');
-        const elBarra = document.getElementById('barra-progresso-meta');
-
-        if (elPlantoes) elPlantoes.textContent = plantoesRealizados;
-        if (elTxtValor) elTxtValor.textContent = `R$ ${valorPorPlantao.toFixed(2).replace('.', ',')}`;
-        if (elTotalSalario) elTotalSalario.textContent = `R$ ${totalAcumulado.toFixed(2).replace('.', ',')}`;
-        if (elTxtMeta) elTxtMeta.textContent = `R$ ${metaSalario.toFixed(2).replace('.', ',')}`;
-
-        let progresso = metaSalario > 0 ? (totalAcumulado / metaSalario) * 100 : 0;
-        if (progresso > 100) progresso = 100;
-        if (elBarra) elBarra.style.width = `${progresso}%`;
-    }
-
     const btnAjustarValor = document.getElementById('btn-ajustar-valor');
     if (btnAjustarValor) {
         btnAjustarValor.addEventListener('click', () => {
@@ -270,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!isNaN(parsed) && parsed >= 0) {
                     valorPorPlantao = parsed;
                     localStorage.setItem(CHAVE_VALOR_PLANTAO, valorPorPlantao);
-                    atualizarCalculoSalario();
+                    window.atualizarCalculoSalario();
                     alert('✅ Valor atualizado!');
                 } else alert('Valor inválido!');
             }
@@ -286,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!isNaN(parsed) && parsed >= 0) {
                     metaSalario = parsed;
                     localStorage.setItem(CHAVE_META_SALARIO, metaSalario);
-                    atualizarCalculoSalario();
+                    window.atualizarCalculoSalario();
                     alert('✅ Meta atualizada!');
                 } else alert('Valor inválido!');
             }
@@ -455,7 +460,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (tipo.includes('Retorno') || tipo.includes('Entrada')) {
             statusServico = 'true';
             localStorage.setItem(CHAVE_STATUS, 'true');
-            resetarTimerRonda();
+            if (!localStorage.getItem(CHAVE_PROXIMA_RONDA)) {
+                resetarTimerRonda();
+            }
         } else if (tipo.includes('Final')) {
             statusServico = 'false';
             localStorage.setItem(CHAVE_STATUS, 'false');
@@ -514,6 +521,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (registros.length === 0) {
             seletorData.innerHTML = '<option value="">Sem datas</option>';
             lista.innerHTML = '<p style="text-align:center; color:#8a99ad; font-size:0.8rem; padding:15px;">Nenhum registro.</p>';
+            
+            // Garante atualização do cálculo mesmo com lista vazia
+            if (typeof window.atualizarCalculoSalario === 'function') {
+                window.atualizarCalculoSalario();
+            }
             return;
         }
 
@@ -537,7 +549,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (item.tipo.includes('Final')) div.classList.add('saida');
 
             const thumb = item.foto ? `<img src="${item.foto}" class="item-thumb">` : `<div style="width:45px;height:45px;background:#111;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:#555;">SEM FOTO</div>`;
-            const mapsLink = item.gps ? `<div class="item-gps"><a href="https://maps.google.com/?q=${item.gps.lat},${item.gps.lng}" target="_blank">📍 Ver Mapa</a></div>` : '';
+            const mapsLink = item.gps ? `<div class="item-gps"><a href="https://www.google.com/maps/search/?api=1&query=${item.gps.lat},${item.gps.lng}" target="_blank" rel="noopener noreferrer">📍 Ver Mapa</a></div>` : '';
 
             div.innerHTML = `
                 ${thumb}
@@ -549,6 +561,11 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             lista.appendChild(div);
         });
+
+        // ➡️ ATUALIZA O SALÁRIO E AS METAS SEMPRE QUE A TELA É RENDERIZADA
+        if (typeof window.atualizarCalculoSalario === 'function') {
+            window.atualizarCalculoSalario();
+        }
     };
     renderizar();
 
@@ -579,7 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         let proximaRonda = parseInt(localStorage.getItem(CHAVE_PROXIMA_RONDA), 10);
-        if (!proximaRonda) {
+        if (!proximaRonda || isNaN(proximaRonda)) {
             resetarTimerRonda();
             proximaRonda = parseInt(localStorage.getItem(CHAVE_PROXIMA_RONDA), 10);
         }
@@ -597,7 +614,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 cardElem.classList.add('ronda-alerta');
                 tocarAlarme();
                 if ("Notification" in window && Notification.permission === "granted") {
-                    new Notification("⏰ HORA DA FOTO!", { body: "Envie a foto no grupo e confirme no app." });
+                    new Notification("⏰ HORA DA FOTO NO GRUPO!", { 
+                        body: "Já passou o tempo! Envie a foto no grupo e confirme no app.",
+                        icon: "https://cdn-icons-png.flaticon.com/512/3602/3602123.png"
+                    });
                 }
             }
         }
@@ -610,7 +630,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pararAlarme();
         document.getElementById('ronda-card').classList.remove('ronda-alerta');
         registrarPontoAutomatico('Confirmar Plantão / Foto', 'Plantão e foto confirmados.');
-        alert('Plantão e foto confirmados!');
+        alert('Plantão e foto confirmados! Próximo lembrete recalculado.');
     });
 
     const video = document.getElementById('video');
