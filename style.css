@@ -1,6 +1,3 @@
-/* ========================================== */
-/* VARIÁVEIS DE TEMA E ESTILOS GLOBAIS        */
-/* ========================================== */
 :root[data-theme="blue"] {
     --cor-fundo: #0a0b10;
     --cor-card: #12141c;

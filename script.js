@@ -198,7 +198,6 @@ window.atualizarCalculoSalario = function() {
     // Cálculo estimado de adicional noturno (22h às 5h)
     let adicionalNoturnoTotal = 0;
     entradas.forEach(() => {
-        // Estimativa padrão de 7 horas noturnas por plantão com acréscimo de 20% sobre hora base (considerando base de R$ 15/h)
         adicionalNoturnoTotal += 7 * 15 * 0.20; 
     });
 
@@ -598,7 +597,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else salvarItem(null);
     }
 
-    // MÓDULO 2: IMPLEMENTAÇÃO DO BOTÃO DE PÂNICO COM PRESSIONAMENTO DE 3s E WHATSAPP
     let timerPanico = null;
     const btnPanico = document.getElementById('btn-panico');
     if (btnPanico) {
@@ -771,11 +769,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 // ==========================================
-// BLOCO 4: PASSAGEM DE PLANTÃO E SUPABASE EM TEMPO REAL
+// BLOCO 4: SUPABASE, MENU DE SUPERVISÃO E PASSAGEM DE PLANTÃO
 // ==========================================
-
 const SUPABASE_URL = 'https://sgammtgdylghphufkidfi.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_YRz40KFT9DTNqBQooNRGPw_kpU2PhYi';
+const SENHA_SUPERVISOR = "9988"; // Senha para abrir o painel de supervisor
+const CHAVE_DIRETRIZ = 'ponto_vigia_diretriz_supervisor';
 
 let supabaseClient = null;
 
@@ -788,7 +787,109 @@ try {
     console.warn('⚠️ Erro ao inicializar Supabase. Operando em modo local.', erro);
 }
 
-// MÓDULO 1: LÓGICA DE PASSAGEM DE PLANTÃO (LIVRO DE OCORRÊNCIAS DIGITAL)
+// --- MÓDULO: SUPERVISÃO ---
+document.addEventListener('DOMContentLoaded', () => {
+    const btnMenuSup = document.getElementById('btn-menu-supervisao');
+    const cardSup = document.getElementById('card-supervisao');
+    const btnFecharSup = document.getElementById('btn-fechar-supervisao');
+    const btnEnviarDiretriz = document.getElementById('btn-enviar-diretriz');
+    const textoDiretriz = document.getElementById('texto-diretriz-supervisor');
+    const listaSupEquipe = document.getElementById('lista-supervisao-equipe');
+    
+    // Elementos do Vigia para ver diretriz
+    const bannerDiretriz = document.getElementById('banner-diretriz-vigia');
+    const txtDiretrizRecebida = document.getElementById('txt-diretriz-recebida');
+
+    // Checar se há diretriz salva localmente
+    const diretrizSalva = localStorage.getItem(CHAVE_DIRETRIZ);
+    if (diretrizSalva && bannerDiretriz && txtDiretrizRecebida) {
+        txtDiretrizRecebida.textContent = diretrizSalva;
+        bannerDiretriz.style.display = 'block';
+    }
+
+    if (btnMenuSup && cardSup) {
+        btnMenuSup.addEventListener('click', () => {
+            vibrarDispositivo(30);
+            const senha = prompt('🔒 Digite a senha do Supervisor:');
+            if (senha === SENHA_SUPERVISOR) {
+                cardSup.style.display = 'block';
+                cardSup.scrollIntoView({ behavior: 'smooth' });
+                carregarDadosSupervisao();
+            } else if (senha !== null) {
+                alert('❌ Senha de supervisor incorreta!');
+            }
+        });
+    }
+
+    if (btnFecharSup && cardSup) {
+        btnFecharSup.addEventListener('click', () => {
+            cardSup.style.display = 'none';
+        });
+    }
+
+    // Função para o supervisor carregar os registros recentes da equipe na nuvem
+    async function carregarDadosSupervisao() {
+        if (!supabaseClient) {
+            listaSupEquipe.innerHTML = '<p style="color: #f1c40f; text-align:center;">Modo Offline / Sem Supabase configurado.</p>';
+            return;
+        }
+        listaSupEquipe.innerHTML = '<p style="color: #8a99ad; text-align:center;">Buscando dados da equipe...</p>';
+        try {
+            const { data, error } = await supabaseClient
+                .from('registros_ponto')
+                .select('*')
+                .order('id_unico', { ascending: false })
+                .limit(10);
+
+            if (error) throw error;
+            if (!data || data.length === 0) {
+                listaSupEquipe.innerHTML = '<p style="color: #8a99ad; text-align:center;">Nenhum registro recente na nuvem.</p>';
+                return;
+            }
+
+            let html = '';
+            data.forEach(reg => {
+                html += `<div style="background: rgba(0,0,0,0.3); padding: 6px; border-radius: 4px; margin-bottom: 4px; border-left: 2px solid var(--cor-primaria);">
+                    <strong>👤 ${reg.vigia || 'Desconhecido'}</strong> (${reg.posto || 'Posto N/I'})<br>
+                    <span style="color: var(--cor-primaria);">${reg.tipo}</span> - ${reg.horario} (${reg.data})
+                </div>`;
+            });
+            listaSupEquipe.innerHTML = html;
+        } catch (e) {
+            listaSupEquipe.innerHTML = '<p style="color: #ef4444; text-align:center;">Erro ao carregar dados da nuvem.</p>';
+        }
+    }
+
+    // Enviar diretriz / ordem de serviço
+    if (btnEnviarDiretriz && textoDiretriz) {
+        btnEnviarDiretriz.addEventListener('click', async () => {
+            vibrarDispositivo(40);
+            const diretriz = textoDiretriz.value.trim();
+            if (!diretriz) return alert('Digite a diretriz para a equipe!');
+
+            localStorage.setItem(CHAVE_DIRETRIZ, diretriz);
+            if (txtDiretrizRecebida) txtDiretrizRecebida.textContent = diretriz;
+            if (bannerDiretriz) bannerDiretriz.style.display = 'block';
+
+            // Enviar para tabela de diretrizes no Supabase se houver
+            if (supabaseClient) {
+                try {
+                    await supabaseClient.from('diretrizes_supervisao').insert([{
+                        mensagem: diretriz,
+                        criado_em: new Date().toISOString()
+                    }]);
+                } catch (e) {
+                    console.warn('Erro ao salvar diretriz na nuvem', e);
+                }
+            }
+
+            textoDiretriz.value = '';
+            alert('✅ Diretriz transmitida com sucesso para a equipe!');
+        });
+    }
+});
+
+// --- MÓDULO: PASSAGEM DE PLANTÃO ---
 document.addEventListener('DOMContentLoaded', () => {
     const txtPassagem = document.getElementById('texto-passagem-plantao');
     const btnSalvarPassagem = document.getElementById('btn-salvar-passagem');
@@ -832,6 +933,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// --- MÓDULO: STORAGE NA NUVEM ---
 const StorageNuvem = {
     async salvarNaNuvem(item) {
         if (!supabaseClient) return false;

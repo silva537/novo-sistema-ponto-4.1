@@ -23,16 +23,40 @@
             </div>
             <div class="header-top">
                 <h1>Ponto Vigia Noturno</h1>
-                <button id="btn-menu-hamburguer" class="btn-hamburguer" title="Menu Dev / Config">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
+                <div style="display: flex; gap: 8px;">
+                    <button id="btn-menu-supervisao" class="btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; background: rgba(0, 240, 255, 0.1); border: 1px solid var(--cor-primaria); color: var(--cor-primaria);" title="Painel do Supervisor">👮‍♂️ Sup</button>
+                    <button id="btn-menu-hamburguer" class="btn-hamburguer" title="Menu Dev / Config">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
             </div>
             <div id="relogio" class="relogio-principal">00:00:00</div>
             <div id="data" class="data-principal">--/--/----</div>
             <div id="status-badge" class="status-badge status-inativo">⚪ FORA DE SERVIÇO</div>
         </header>
+
+        <section id="card-supervisao" class="card" style="display: none; background: rgba(0, 240, 255, 0.03); border: 1px solid rgba(0, 240, 255, 0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 style="font-size: 0.95rem; color: var(--cor-primaria); text-transform: uppercase; margin: 0;">👮‍♂️ Painel de Supervisão</h2>
+                <button id="btn-fechar-supervisao" style="background: none; border: none; color: #fff; font-size: 1rem; cursor: pointer;">✕</button>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px;">Acompanhamento de plantões e envio de ordens de serviço da equipe:</p>
+            
+            <div class="form-group">
+                <label style="font-size: 0.75rem; color: var(--cor-primaria);">Enviar Diretriz / Ordem para os Vigias:</label>
+                <textarea id="texto-diretriz-supervisor" rows="2" placeholder="Ex: Atenção redobrada no portão dos fundos..." style="width: 100%; padding: 8px; background: #0a0b10; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; font-size: 0.8rem; resize: none;"></textarea>
+                <button id="btn-enviar-diretriz" class="btn-secondary" style="width: 100%; margin-top: 6px; background: var(--cor-primaria); color: #000; padding: 8px; font-size: 0.78rem;">📢 Transmitir Diretriz para Equipe</button>
+            </div>
+
+            <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 10px;">
+                <label style="font-size: 0.75rem; color: var(--cor-primaria); margin-bottom: 6px; display: block;">📊 Status Geral dos Postos (Nuvem):</label>
+                <div id="lista-supervisao-equipe" style="max-height: 150px; overflow-y: auto; font-size: 0.75rem; color: #ccc;">
+                    <p style="color: #8a99ad; text-align: center;">Carregando dados da equipe...</p>
+                </div>
+            </div>
+        </section>
 
         <section class="card" style="padding: 12px 18px;">
             <div id="status-card-painel" style="display: flex; align-items: center; gap: 12px;">
@@ -44,12 +68,15 @@
             </div>
         </section>
 
+        <div id="banner-diretriz-vigia" style="display: none; background: rgba(0, 240, 255, 0.15); border: 1px solid var(--cor-primaria); border-radius: 8px; padding: 10px; margin-bottom: 14px; font-size: 0.8rem;">
+            <strong style="color: var(--cor-primaria);">📢 Comunicado da Supervisão:</strong>
+            <p id="txt-diretriz-recebida" style="color: #fff; margin-top: 4px;"></p>
+        </div>
+
         <main>
             <section class="card">
                 <h2 class="card-titulo-secundario">Controle do Plantão</h2>
                 <button id="btn-toggle-servico" class="btn-servico-toggle btn-iniciar-servico">▶️ ENTRAR EM SERVIÇO</button>
-                
-                <!-- MÓDULO 2: MODO PÂNICO COM COMPARTILHAMENTO GPS -->
                 <button id="btn-panico" class="btn-secondary btn-danger" style="width: 100%; margin-top: 10px; padding: 12px; font-size: 0.85rem; font-weight: 800; border: 2px dashed #fff;">🚨 SEGURE 3s PARA PÂNICO / EMERGÊNCIA</button>
             </section>
 
@@ -62,7 +89,6 @@
                 </div>
             </section>
 
-            <!-- MÓDULO 1: LIVRO DE OCORRÊNCIAS / PASSAGEM DE PLANTÃO -->
             <section class="card" style="background: rgba(112, 0, 255, 0.03); border: 1px solid rgba(112, 0, 255, 0.2);">
                 <h2 class="card-titulo-secundario" style="color: #a855f7;">📋 Passagem de Plantão (Livro)</h2>
                 <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Deixe recados importantes para o colega que vai assumir o próximo turno:</p>
@@ -76,7 +102,6 @@
                 </div>
             </section>
 
-            <!-- MENU DEV -->
             <section id="card-dev" class="card card-dev" style="display: none;">
                 <h2 style="font-size: 0.95rem; margin-bottom: 12px; color: var(--cor-aviso); text-transform: uppercase;">🛠️ Menu Dev <span style="background: var(--cor-aviso); color: #000; font-size: 0.65rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">CONFIG</span></h2>
                 
@@ -133,6 +158,7 @@
                     <button id="btn-dev-reset" class="btn-secondary btn-danger">Resetar Tudo</button>
                 </div>
             </section>
+
             <section class="card">
                 <h2 class="card-titulo-secundario">Identificação do Posto</h2>
                 <div class="form-group">
@@ -177,7 +203,6 @@
                 <button id="btn-registrar" class="btn-primary">Bater Ponto Agora</button>
             </section>
 
-            <!-- TIMELINE E MÓDULO 4: CALCULADORA DE SALÁRIO E ADICIONAL NOTURNO -->
             <section class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h2 class="card-titulo-secundario" style="margin: 0;">Timeline de Registros</h2>
