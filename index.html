@@ -89,6 +89,7 @@
                 </div>
             </section>
 
+            <!-- BLOCO DE PASSAGEM DE PLANTÃO CORRIGIDO -->
             <section class="card" style="background: rgba(112, 0, 255, 0.03); border: 1px solid rgba(112, 0, 255, 0.2);">
                 <h2 class="card-titulo-secundario" style="color: #a855f7;">📋 Passagem de Plantão (Livro)</h2>
                 <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Deixe recados importantes para o colega que vai assumir o próximo turno:</p>
@@ -262,7 +263,11 @@
         </footer>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Script modularizado dividido em 4 partes -->
+    <script src="script_bloco1.js"></script>
+    <script src="script_bloco2.js"></script>
+    <script src="script_bloco3.js"></script>
+    <script src="script_bloco4.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
