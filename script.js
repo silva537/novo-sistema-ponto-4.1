@@ -12,18 +12,14 @@ const CHAVE_VALOR_PLANTAO = 'ponto_vigia_valor_plantao';
 const CHAVE_META_SALARIO = 'ponto_vigia_meta_salario';
 const CHAVE_GEOFENCING = 'ponto_vigia_geofencing_config';
 const CHAVE_FILA_OFFLINE = 'ponto_vigia_fila_offline_queue';
+const CHAVE_PASSAGEM_PLANTAO = 'ponto_vigia_passagem_plantao';
 const SENHA_DEV = "3691";
 
 let tempoRondaSegundos = parseInt(localStorage.getItem(CHAVE_DEV_TEMPO), 10) || 3600;
 
-// OPÇÃO 5: Função utilitária para Feedback Tátil (Vibração nativa)
 function vibrarDispositivo(padrao = 50) {
     if ("vibrate" in navigator) {
-        try {
-            navigator.vibrate(padrao);
-        } catch (e) {
-            console.warn("Vibração bloqueada pelo navegador.");
-        }
+        try { navigator.vibrate(padrao); } catch (e) {}
     }
 }
 
@@ -42,25 +38,21 @@ function atualizarStatusSistema() {
     if (infoConexao) {
         const qtdFila = obterFilaOffline().length;
         const totalRegistros = Storage.obter().length;
-        
         if (navigator.onLine) {
             if (qtdFila > 0) {
-                infoConexao.innerHTML = `🟡 <span style="color: #f1c40f;">●</span> Sincronizando (${qtdFila} pendente${qtdFila > 1 ? 's' : ''})...`;
+                infoConexao.innerHTML = `🟡 <span style="color: #f1c40f;">●</span> Sincronizando (${qtdFila} pendente)...`;
             } else {
-                infoConexao.innerHTML = `🟢 <span style="color: #2ecc71;">●</span> Online (Sincronizado: ${totalRegistros})`;
+                infoConexao.innerHTML = `🟢 <span style="color: #2ecc71;">●</span> Online (Total: ${totalRegistros})`;
             }
         } else {
-            infoConexao.innerHTML = `🔴 <span style="color: #e74c3c;">●</span> Offline - Modo Local (${qtdFila} na fila)`;
+            infoConexao.innerHTML = `🔴 <span style="color: #e74c3c;">●</span> Offline (${qtdFila} na fila)`;
         }
     }
 
     if (navigator.getBattery) {
         navigator.getBattery().then(battery => {
-            const nivel = Math.round(battery.level * 100);
-            infoBateria.textContent = `🔋 Bateria: ${nivel}%`;
+            infoBateria.textContent = `🔋 Bateria: ${Math.round(battery.level * 100)}%`;
         }).catch(() => { infoBateria.textContent = "🔋 Bateria: N/D"; });
-    } else {
-        infoBateria.textContent = "";
     }
 }
 
@@ -85,10 +77,8 @@ function sincronizarFilaOffline() {
     let atualizados = [...fila, ...registros];
     localStorage.setItem(CHAVE_STORAGE, JSON.stringify(atualizados));
     localStorage.setItem(CHAVE_BACKUP, JSON.stringify(atualizados));
-    
     localStorage.removeItem(CHAVE_FILA_OFFLINE);
     atualizarStatusSistema();
-    
     if (typeof renderizar === 'function') renderizar();
 }
 
@@ -127,17 +117,12 @@ const Storage = {
 
 window.apagarRegistroUnico = function(id) {
     if (confirm('Deseja realmente apagar este registro específico?')) {
-        vibrarDispositivo([40, 40, 40]);
-        let registros = Storage.obter();
-        registros = registros.filter(item => item.id !== id);
-        
+        vibrarDispositivo([40, 40]);
+        let registros = Storage.obter().filter(item => item.id !== id);
         const jsonStr = JSON.stringify(registros);
         localStorage.setItem(CHAVE_STORAGE, jsonStr);
         localStorage.setItem(CHAVE_BACKUP, jsonStr);
-        
-        if (typeof renderizar === 'function') {
-            renderizar();
-        }
+        if (typeof renderizar === 'function') renderizar();
     }
 };
 
@@ -148,8 +133,7 @@ function calcularDistanciaMetros(lat1, lon1, lat2, lon2) {
     const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
               Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
               Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
 }
 
 let fotoBase64 = null;
@@ -186,7 +170,7 @@ function tocarAlarme() {
                 osc.start();
                 osc.stop(audioContext.currentTime + 0.3);
             }
-        } catch (e) { console.warn(e); }
+        } catch (e) {}
     }, 800);
 }
 
@@ -199,29 +183,9 @@ function resetarTimerRonda(segundosCustom = null) {
     const proximaRonda = Date.now() + (segundos * 1000);
     localStorage.setItem(CHAVE_PROXIMA_RONDA, proximaRonda);
 }
-
-setInterval(() => {
-    if (statusServico !== 'true') return;
-    const configGeo = JSON.parse(localStorage.getItem(CHAVE_GEOFENCING));
-    if (!configGeo || !configGeo.lat || !configGeo.lng) return;
-
-    if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition((pos) => {
-            const distancia = calcularDistanciaMetros(configGeo.lat, configGeo.lng, pos.coords.latitude, pos.coords.longitude);
-            if (distancia > configGeo.raio) {
-                tocarAlarme();
-                vibrarDispositivo([200, 100, 200]);
-                if ("Notification" in window && Notification.permission === "granted") {
-                    new Notification("🚨 ALERTA DE AFASTAMENTO!", { body: `Você saiu do raio do posto! Distância: ${Math.round(distancia)}m` });
-                }
-            }
-        }, () => {}, { timeout: 5000, enableHighAccuracy: true });
-    }
-}, 60000);
 // ==========================================
-// BLOCO 2: CONFIGURAÇÃO DE UI, MENU DEV E RENDERIZAÇÃO
+// BLOCO 2: UI, MENU DEV, CÁLCULO DE ADICIONAL E RENDERIZAÇÃO
 // ==========================================
-
 window.atualizarCalculoSalario = function() {
     let valorPorPlantao = parseFloat(localStorage.getItem(CHAVE_VALOR_PLANTAO)) || 100.00;
     let metaSalario = parseFloat(localStorage.getItem(CHAVE_META_SALARIO)) || 1000.00;
@@ -231,56 +195,27 @@ window.atualizarCalculoSalario = function() {
     const plantoesRealizados = entradas.length;
     const totalAcumulado = plantoesRealizados * valorPorPlantao;
 
-    let streakCount = 0;
-    if (entradas.length > 0) {
-        const datasUnicas = [...new Set(entradas.map(r => r.data))];
-        
-        const parseDataBR = (strData) => {
-            const partes = strData.split('/');
-            return new Date(partes[2], partes[1] - 1, partes[0]);
-        };
-
-        if (datasUnicas.length > 0) {
-            let hoje = new Date();
-            hoje.setHours(0,0,0,0);
-            let ultimaData = parseDataBR(datasUnicas[0]);
-            ultimaData.setHours(0,0,0,0);
-
-            const diffDiasUltimo = Math.round((hoje - ultimaData) / (1000 * 60 * 60 * 24));
-            
-            if (diffDiasUltimo <= 1) {
-                streakCount = 1;
-                let dataChecagem = new Date(ultimaData);
-
-                for (let i = 1; i < datasUnicas.length; i++) {
-                    dataChecagem.setDate(dataChecagem.getDate() - 1);
-                    let dataAnteriorBanco = parseDataBR(datasUnicas[i]);
-                    dataAnteriorBanco.setHours(0,0,0,0);
-
-                    if (dataAnteriorBanco.getTime() === dataChecagem.getTime()) {
-                        streakCount++;
-                    } else {
-                        break;
-                    }
-                }
-            }
-        }
-    }
+    // Cálculo estimado de adicional noturno (22h às 5h)
+    let adicionalNoturnoTotal = 0;
+    entradas.forEach(() => {
+        // Estimativa padrão de 7 horas noturnas por plantão com acréscimo de 20% sobre hora base (considerando base de R$ 15/h)
+        adicionalNoturnoTotal += 7 * 15 * 0.20; 
+    });
 
     const elPlantoes = document.getElementById('total-plantoes');
     const elTxtValor = document.getElementById('txt-valor-plantao');
     const elTotalSalario = document.getElementById('total-salario');
     const elTxtMeta = document.getElementById('txt-meta-salario');
     const elBarra = document.getElementById('barra-progresso-meta');
-    const elStreak = document.getElementById('streak-plantoes');
+    const elAdicional = document.getElementById('txt-adicional-noturno');
 
     if (elPlantoes) elPlantoes.textContent = plantoesRealizados;
     if (elTxtValor) elTxtValor.textContent = `R$ ${valorPorPlantao.toFixed(2).replace('.', ',')}`;
-    if (elTotalSalario) elTotalSalario.textContent = `R$ ${totalAcumulado.toFixed(2).replace('.', ',')}`;
+    if (elTotalSalario) elTotalSalario.textContent = `R$ ${(totalAcumulado + adicionalNoturnoTotal).toFixed(2).replace('.', ',')}`;
     if (elTxtMeta) elTxtMeta.textContent = `R$ ${metaSalario.toFixed(2).replace('.', ',')}`;
-    if (elStreak) elStreak.textContent = streakCount;
+    if (elAdicional) elAdicional.textContent = `R$ ${adicionalNoturnoTotal.toFixed(2).replace('.', ',')}`;
 
-    let progresso = metaSalario > 0 ? (totalAcumulado / metaSalario) * 100 : 0;
+    let progresso = metaSalario > 0 ? ((totalAcumulado + adicionalNoturnoTotal) / metaSalario) * 100 : 0;
     if (progresso > 100) progresso = 100;
     if (elBarra) elBarra.style.width = `${progresso}%`;
 };
@@ -316,7 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('dev-lng-posto').value = pos.coords.longitude;
                 btnCapturarGeoAtual.textContent = '🎯 Capturar Localização Atual do GPS';
                 btnCapturarGeoAtual.disabled = false;
-                vibrarDispositivo([50, 50, 50]);
                 alert('✅ Coordenadas capturadas com sucesso!');
             }, (err) => {
                 btnCapturarGeoAtual.textContent = '🎯 Capturar Localização Atual do GPS';
@@ -384,7 +318,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (senha === SENHA_DEV) {
             localStorage.setItem(CHAVE_MANUTENCAO, 'false');
             document.getElementById('tela-manutencao').style.display = 'none';
-            vibrarDispositivo([80, 80]);
             alert('✅ Acesso liberado!');
         } else if (senha !== null) alert('❌ Senha incorreta!');
     });
@@ -440,7 +373,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (Array.isArray(dadosImportados)) {
                     localStorage.setItem(CHAVE_STORAGE, JSON.stringify(dadosImportados));
                     renderizar();
-                    vibrarDispositivo([60, 60]);
                     alert('✅ Backup restaurado!');
                 } else alert('JSON inválido.');
             } catch (err) { alert('Erro: ' + err.message); }
@@ -456,52 +388,40 @@ document.addEventListener('DOMContentLoaded', () => {
         if (statusServico === 'true') resetarTimerRonda();
     });
 
-    const btnDev10s = document.getElementById('btn-dev-10s');
-    if (btnDev10s) {
-        btnDev10s.addEventListener('click', () => {
-            vibrarDispositivo(40);
-            tempoRondaSegundos = 10;
-            localStorage.setItem(CHAVE_DEV_TEMPO, 10);
-            if(document.getElementById('dev-tempo-ronda')) document.getElementById('dev-tempo-ronda').value = 10;
-            resetarTimerRonda(10);
-            alert('⚡ Timer configurado para 10 segundos!');
-        });
-    }
+    document.getElementById('btn-dev-10s').addEventListener('click', () => {
+        vibrarDispositivo(40);
+        tempoRondaSegundos = 10;
+        localStorage.setItem(CHAVE_DEV_TEMPO, 10);
+        document.getElementById('dev-tempo-ronda').value = 10;
+        resetarTimerRonda(10);
+        alert('⚡ Timer configurado para 10 segundos!');
+    });
 
-    const btnDevDisparar = document.getElementById('btn-dev-disparar');
-    if (btnDevDisparar) {
-        btnDevDisparar.addEventListener('click', () => {
-            vibrarDispositivo([100, 50, 100]);
-            localStorage.setItem(CHAVE_PROXIMA_RONDA, Date.now() - 1000);
-            tocarAlarme();
-            alert('🚨 Alerta de ronda simulado com sucesso!');
-        });
-    }
+    document.getElementById('btn-dev-disparar').addEventListener('click', () => {
+        vibrarDispositivo([100, 50, 100]);
+        localStorage.setItem(CHAVE_PROXIMA_RONDA, Date.now() - 1000);
+        tocarAlarme();
+        alert('🚨 Alerta de ronda simulado com sucesso!');
+    });
 
-    const btnDevMock = document.getElementById('btn-dev-mock');
-    if (btnDevMock) {
-        btnDevMock.addEventListener('click', () => {
-            vibrarDispositivo(40);
-            const mocks = [
-                { id: Date.now() - 3600000, tipo: "Entrada de Serviço", observacao: "Início de plantão teste", horario: "22:00", data: "21/09/2026", gps: null, foto: null },
-                { id: Date.now() - 1800000, tipo: "Confirmar Plantão / Foto", observacao: "Ronda ok", horario: "23:00", data: "21/09/2026", gps: null, foto: null }
-            ];
-            localStorage.setItem(CHAVE_STORAGE, JSON.stringify(mocks));
-            if (typeof renderizar === 'function') renderizar();
-            alert('📦 Dados fictícios (Mock) gerados!');
-        });
-    }
+    document.getElementById('btn-dev-mock').addEventListener('click', () => {
+        vibrarDispositivo(40);
+        const mocks = [
+            { id: Date.now() - 3600000, tipo: "Entrada de Serviço", observacao: "Início de plantão teste", horario: "22:00", data: "21/09/2026", gps: null, foto: null },
+            { id: Date.now() - 1800000, tipo: "Confirmar Plantão / Foto", observacao: "Ronda ok", horario: "23:00", data: "21/09/2026", gps: null, foto: null }
+        ];
+        localStorage.setItem(CHAVE_STORAGE, JSON.stringify(mocks));
+        renderizar();
+        alert('📦 Dados fictícios gerados!');
+    });
 
-    const btnDevReset = document.getElementById('btn-dev-reset');
-    if (btnDevDevReset => btnDevReset) {
-        btnDevReset.addEventListener('click', () => {
-            vibrarDispositivo([100, 100]);
-            if (confirm('⚠️ Tem certeza que deseja resetar todas as configurações e dados salvos?')) {
-                localStorage.clear();
-                location.reload();
-            }
-        });
-    }
+    document.getElementById('btn-dev-reset').addEventListener('click', () => {
+        vibrarDispositivo([100, 100]);
+        if (confirm('⚠️ Tem certeza que deseja resetar tudo?')) {
+            localStorage.clear();
+            location.reload();
+        }
+    });
 });
 
 window.renderizar = function() {
@@ -513,10 +433,7 @@ window.renderizar = function() {
     if (registros.length === 0) {
         seletorData.innerHTML = '<option value="">Sem datas</option>';
         lista.innerHTML = '<p style="text-align:center; color:#8a99ad; font-size:0.8rem; padding:15px;">Nenhum registro.</p>';
-        
-        if (typeof window.atualizarCalculoSalario === 'function') {
-            window.atualizarCalculoSalario();
-        }
+        if (typeof window.atualizarCalculoSalario === 'function') window.atualizarCalculoSalario();
         return;
     }
 
@@ -540,7 +457,7 @@ window.renderizar = function() {
         if (item.tipo.includes('Final')) div.classList.add('saida');
 
         const thumb = item.foto ? `<img src="${item.foto}" class="item-thumb">` : `<div style="width:45px;height:45px;background:#111;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:#555;">SEM FOTO</div>`;
-        const mapsLink = item.gps ? `<div class="item-gps"><a href="geo:${item.gps.lat},${item.gps.lng}?q=${item.gps.lat},${item.gps.lng}(Posto)">📍 Ver Mapa</a></div>` : '';
+        const mapsLink = item.gps ? `<div class="item-gps"><a href="https://maps.google.com/?q=${item.gps.lat},${item.gps.lng}" target="_blank">📍 Ver Mapa</a></div>` : '';
 
         div.innerHTML = `
             ${thumb}
@@ -549,7 +466,7 @@ window.renderizar = function() {
                     <span>${item.tipo}</span>
                     <div style="display: flex; gap: 8px; align-items: center;">
                         <span>${item.horario}</span>
-                        <button onclick="apagarRegistroUnico(${item.id})" title="Apagar este registro" style="background: none; border: none; cursor: pointer; font-size: 0.9rem;">🗑️</button>
+                        <button onclick="apagarRegistroUnico(${item.id})" title="Apagar" style="background: none; border: none; cursor: pointer; font-size: 0.9rem;">🗑️</button>
                     </div>
                 </div>
                 ${item.observacao ? `<div class="item-obs">Obs: ${item.observacao}</div>` : ''}
@@ -559,9 +476,7 @@ window.renderizar = function() {
         lista.appendChild(div);
     });
 
-    if (typeof window.atualizarCalculoSalario === 'function') {
-        window.atualizarCalculoSalario();
-    }
+    if (typeof window.atualizarCalculoSalario === 'function') window.atualizarCalculoSalario();
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -570,14 +485,12 @@ document.addEventListener('DOMContentLoaded', () => {
     renderizar();
 });
 // ==========================================
-// BLOCO 3: REGISTRO DE PONTO, CÂMERA E SUPABASE
+// BLOCO 3: REGISTRO DE PONTO, CÂMERA, GEOFENCING E MODO PÂNICO
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     function atualizarInterfaceStatus() {
         const badge = document.getElementById('status-badge');
         const btnToggle = document.getElementById('btn-toggle-servico');
-        
-        // OPÇÃO 2: Atualização dos Cartões Dinâmicos de Status no Topo
         const cardPainel = document.getElementById('status-card-painel');
         const cardIcone = document.getElementById('status-card-icone');
         const cardTexto = document.getElementById('status-card-texto');
@@ -587,7 +500,6 @@ document.addEventListener('DOMContentLoaded', () => {
             badge.textContent = '🟢 EM SERVIÇO / EM PLANTÃO';
             btnToggle.className = 'btn-servico-toggle btn-parar-servico';
             btnToggle.textContent = '⏹️ SAIR / FINALIZAR SERVIÇO';
-            
             if (cardPainel) {
                 cardPainel.style.borderLeft = '4px solid #10b981';
                 cardIcone.textContent = '🟢';
@@ -599,7 +511,6 @@ document.addEventListener('DOMContentLoaded', () => {
             badge.textContent = '🟡 EM HORÁRIO DE REFEIÇÃO';
             btnToggle.className = 'btn-servico-toggle btn-iniciar-servico';
             btnToggle.textContent = '▶️ RETORNAR AO SERVIÇO';
-            
             if (cardPainel) {
                 cardPainel.style.borderLeft = '4px solid #f59e0b';
                 cardIcone.textContent = '🟡';
@@ -611,7 +522,6 @@ document.addEventListener('DOMContentLoaded', () => {
             badge.textContent = '⚪ FORA DE SERVIÇO';
             btnToggle.className = 'btn-servico-toggle btn-iniciar-servico';
             btnToggle.textContent = '▶️ ENTRAR EM SERVIÇO';
-            
             if (cardPainel) {
                 cardPainel.style.borderLeft = '4px solid #6b7280';
                 cardIcone.textContent = '⚪';
@@ -623,7 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
     atualizarInterfaceStatus();
 
     function registrarPontoAutomatico(tipo, obs = "") {
-        vibrarDispositivo([60, 60]); // OPÇÃO 5: Vibração ao bater ponto
+        vibrarDispositivo([60, 60]);
         const agora = new Date();
         const h = String(agora.getHours()).padStart(2, '0');
         const m = String(agora.getMinutes()).padStart(2, '0');
@@ -638,9 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (tipo.includes('Retorno') || tipo.includes('Entrada')) {
             statusServico = 'true';
             localStorage.setItem(CHAVE_STATUS, 'true');
-            if (!localStorage.getItem(CHAVE_PROXIMA_RONDA)) {
-                resetarTimerRonda();
-            }
+            if (!localStorage.getItem(CHAVE_PROXIMA_RONDA)) resetarTimerRonda();
         } else if (tipo.includes('Final')) {
             statusServico = 'false';
             localStorage.setItem(CHAVE_STATUS, 'false');
@@ -690,6 +598,52 @@ document.addEventListener('DOMContentLoaded', () => {
         } else salvarItem(null);
     }
 
+    // MÓDULO 2: IMPLEMENTAÇÃO DO BOTÃO DE PÂNICO COM PRESSIONAMENTO DE 3s E WHATSAPP
+    let timerPanico = null;
+    const btnPanico = document.getElementById('btn-panico');
+    if (btnPanico) {
+        const dispararPanico = () => {
+            vibrarDispositivo([300, 100, 300, 100, 300]);
+            tocarAlarme();
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    const linkMaps = `https://maps.google.com/?q=${lat},${lng}`;
+                    const vigiaNome = document.getElementById('nome-vigia').value || 'Vigia Noturno';
+                    const postoNome = document.getElementById('posto-trabalho').value || 'Posto';
+                    
+                    const mensagem = `🚨 *EMERGÊNCIA / MODO PÂNICO ACIONADO!* 🚨\n👤 Vigia: ${vigiaNome}\n📍 Posto: ${postoNome}\n⚠️ Preciso de ajuda urgente neste local!\n🗺️ Localização exata: ${linkMaps}`;
+                    
+                    registrarPontoAutomatico('🚨 ALERTA DE PÂNICO', 'Acionado botão de emergência com compartilhamento de GPS.');
+                    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(mensagem)}`, '_blank');
+                }, () => {
+                    alert('⚠️ Pânico acionado, mas não foi possível obter o GPS.');
+                }, { timeout: 5000, enableHighAccuracy: true });
+            } else {
+                alert('🚨 PÂNICO ACIONADO! Geolocalização indisponível.');
+            }
+        };
+
+        ['mousedown', 'touchstart'].forEach(evt => {
+            btnPanico.addEventListener(evt, (e) => {
+                e.preventDefault();
+                btnPanico.style.background = '#ff0055';
+                timerPanico = setTimeout(dispararPanico, 3000);
+            });
+        });
+
+        ['mouseup', 'mouseleave', 'touchend', 'touchcancel'].forEach(evt => {
+            btnPanico.addEventListener(evt, () => {
+                btnPanico.style.background = '';
+                if (timerPanico) {
+                    clearTimeout(timerPanico);
+                    timerPanico = null;
+                }
+            });
+        });
+    }
+
     document.getElementById('btn-toggle-servico').addEventListener('click', () => {
         inicializarAudioContext();
         if (statusServico === 'true') registrarPontoAutomatico('Final de Expediente / Saída', 'Saída do plantão.');
@@ -733,12 +687,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 cardElem.classList.add('ronda-alerta');
                 tocarAlarme();
                 vibrarDispositivo([150, 100, 150]);
-                if ("Notification" in window && Notification.permission === "granted") {
-                    new Notification("⏰ HORA DA FOTO NO GRUPO!", { 
-                        body: "Já passou o tempo! Envie a foto no grupo e confirme no app.",
-                        icon: "https://cdn-icons-png.flaticon.com/512/3602/3602123.png"
-                    });
-                }
             }
         }
     }, 1000);
@@ -751,7 +699,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pararAlarme();
         document.getElementById('ronda-card').classList.remove('ronda-alerta');
         registrarPontoAutomatico('Confirmar Plantão / Foto', 'Plantão e foto confirmados.');
-        alert('Plantão e foto confirmados! Próximo lembrete recalculado.');
+        alert('Plantão e foto confirmados!');
     });
 
     const video = document.getElementById('video');
@@ -823,7 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 // ==========================================
-// BLOCO 4: SUPABASE E SINCRONIZAÇÃO EM TEMPO REAL
+// BLOCO 4: PASSAGEM DE PLANTÃO E SUPABASE EM TEMPO REAL
 // ==========================================
 
 const SUPABASE_URL = 'https://sgammtgdylghphufkidfi.supabase.co';
@@ -839,6 +787,50 @@ try {
 } catch (erro) {
     console.warn('⚠️ Erro ao inicializar Supabase. Operando em modo local.', erro);
 }
+
+// MÓDULO 1: LÓGICA DE PASSAGEM DE PLANTÃO (LIVRO DE OCORRÊNCIAS DIGITAL)
+document.addEventListener('DOMContentLoaded', () => {
+    const txtPassagem = document.getElementById('texto-passagem-plantao');
+    const btnSalvarPassagem = document.getElementById('btn-salvar-passagem');
+    const painelRecado = document.getElementById('painel-recado-anterior');
+    const txtRecadoLido = document.getElementById('txt-recado-lido');
+
+    // Carregar último recado salvo
+    const recadoSalvo = localStorage.getItem(CHAVE_PASSAGEM_PLANTAO);
+    if (recadoSalvo && painelRecado && txtRecadoLido) {
+        txtRecadoLido.textContent = recadoSalvo;
+        painelRecado.style.display = 'block';
+    }
+
+    if (btnSalvarPassagem && txtPassagem) {
+        btnSalvarPassagem.addEventListener('click', async () => {
+            vibrarDispositivo(40);
+            const texto = txtPassagem.value.trim();
+            if (!texto) return alert('Digite algum recado para o próximo turno!');
+            
+            localStorage.setItem(CHAVE_PASSAGEM_PLANTAO, texto);
+            if (txtRecadoLido) txtRecadoLido.textContent = texto;
+            if (painelRecado) painelRecado.style.display = 'block';
+            
+            // Sincronizar recado com o Supabase se disponível
+            if (supabaseClient) {
+                try {
+                    await supabaseClient.from('passagem_plantao').insert([{
+                        vigia: document.getElementById('nome-vigia')?.value || 'Não informado',
+                        posto: document.getElementById('posto-trabalho')?.value || 'Não informado',
+                        recado: texto,
+                        criado_em: new Date().toISOString()
+                    }]);
+                } catch (e) {
+                    console.warn('Erro ao enviar passagem de plantão para nuvem', e);
+                }
+            }
+
+            txtPassagem.value = '';
+            alert('✅ Recado de passagem de plantão salvo com sucesso!');
+        });
+    }
+});
 
 const StorageNuvem = {
     async salvarNaNuvem(item) {
@@ -875,9 +867,7 @@ const StorageNuvem = {
         let novosPendentes = [];
         for (let item of fila) {
             const sucesso = await this.salvarNaNuvem(item);
-            if (!sucesso) {
-                novosPendentes.push(item);
-            }
+            if (!sucesso) novosPendentes.push(item);
         }
         localStorage.setItem(CHAVE_FILA_OFFLINE, JSON.stringify(novosPendentes));
         atualizarStatusSistema();

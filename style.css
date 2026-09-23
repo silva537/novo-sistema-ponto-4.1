@@ -1,5 +1,5 @@
 /* ========================================== */
-/* VARIÁVEIS DE TEMA (Padrão: Neon Blue)     */
+/* VARIÁVEIS DE TEMA E ESTILOS GLOBAIS        */
 /* ========================================== */
 :root[data-theme="blue"] {
     --cor-fundo: #0a0b10;
@@ -70,7 +70,6 @@ body {
     min-height: 100vh;
 }
 
-/* Tela de Manutenção / Standby */
 .tela-manutencao {
     position: fixed;
     top: 0;
@@ -125,7 +124,6 @@ header h1 {
     letter-spacing: 0.5px;
 }
 
-/* Botão Menu Dev Hamburguer */
 .btn-hamburguer {
     background: transparent;
     border: none;
@@ -241,7 +239,6 @@ input:focus, select:focus {
     border-color: var(--cor-primaria);
 }
 
-/* Botões Customizados */
 button {
     cursor: pointer;
     font-weight: 700;
@@ -307,7 +304,6 @@ button:active {
     gap: 8px;
 }
 
-/* Ronda Card & Alerta */
 .ronda-card-box {
     background: rgba(0, 0, 0, 0.3);
     border-radius: 8px;
@@ -333,7 +329,6 @@ button:active {
     to { background: rgba(239, 68, 68, 0.3); }
 }
 
-/* Timeline / Lista de Registros */
 .timeline-container {
     max-height: 280px;
     overflow-y: auto;

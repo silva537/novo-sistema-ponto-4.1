@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="blue">
 <head>
-    <!-- SDK Oficial do Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,7 +8,6 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Tela de Manutenção / Standby Protegida por Senha (3691) -->
     <div id="tela-manutencao" class="tela-manutencao">
         <div style="font-size: 3rem; margin-bottom: 15px;">🛠️</div>
         <h2 style="color: var(--cor-secundaria); font-size: 1.5rem; margin-bottom: 10px;">APLICATIVO EM MANUTENÇÃO</h2>
@@ -36,7 +34,6 @@
             <div id="status-badge" class="status-badge status-inativo">⚪ FORA DE SERVIÇO</div>
         </header>
 
-        <!-- OPÇÃO 2: PAINEL DE STATUS COM CORES DE ALERTA (STATUS CARDS) -->
         <section class="card" style="padding: 12px 18px;">
             <div id="status-card-painel" style="display: flex; align-items: center; gap: 12px;">
                 <div id="status-card-icone" style="font-size: 1.8rem;">⚪</div>
@@ -51,6 +48,9 @@
             <section class="card">
                 <h2 class="card-titulo-secundario">Controle do Plantão</h2>
                 <button id="btn-toggle-servico" class="btn-servico-toggle btn-iniciar-servico">▶️ ENTRAR EM SERVIÇO</button>
+                
+                <!-- MÓDULO 2: MODO PÂNICO COM COMPARTILHAMENTO GPS -->
+                <button id="btn-panico" class="btn-secondary btn-danger" style="width: 100%; margin-top: 10px; padding: 12px; font-size: 0.85rem; font-weight: 800; border: 2px dashed #fff;">🚨 SEGURE 3s PARA PÂNICO / EMERGÊNCIA</button>
             </section>
 
             <section class="card">
@@ -59,6 +59,20 @@
                     <div>Próxima foto do grupo em:</div>
                     <div id="ronda-timer" class="ronda-timer-txt">01:00:00</div>
                     <button id="btn-confirmar-ronda" class="btn-secondary btn-success" style="width: 100%; padding: 12px; font-size: 0.85rem;">Confirmar Plantão</button>
+                </div>
+            </section>
+
+            <!-- MÓDULO 1: LIVRO DE OCORRÊNCIAS / PASSAGEM DE PLANTÃO -->
+            <section class="card" style="background: rgba(112, 0, 255, 0.03); border: 1px solid rgba(112, 0, 255, 0.2);">
+                <h2 class="card-titulo-secundario" style="color: #a855f7;">📋 Passagem de Plantão (Livro)</h2>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Deixe recados importantes para o colega que vai assumir o próximo turno:</p>
+                <div class="form-group">
+                    <textarea id="texto-passagem-plantao" rows="3" placeholder="Ex: Portão lateral trancado, lâmpada queimada..." style="width: 100%; padding: 10px; background: #0a0b10; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 0.85rem; resize: none;"></textarea>
+                </div>
+                <button id="btn-salvar-passagem" class="btn-secondary" style="width: 100%; background: #7000ff; color: #fff; padding: 10px; font-size: 0.8rem;">💾 Salvar Recado para Próximo Turno</button>
+                <div id="painel-recado-anterior" style="margin-top: 10px; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 6px; font-size: 0.78rem; display: none;">
+                    <strong style="color: #a855f7;">Último Recado Deixado:</strong>
+                    <p id="txt-recado-lido" style="color: #ddd; margin-top: 3px;"></p>
                 </div>
             </section>
 
@@ -76,12 +90,9 @@
                     </select>
                 </div>
 
-                <!-- Configurações de Geofencing -->
                 <div style="border-top: 1px solid #333; padding-top: 10px; margin-top: 10px;">
                     <label style="color: var(--cor-aviso); font-size: 0.8rem; font-weight: bold;">📍 Configurar Geofencing (Posto):</label>
-                    
                     <button id="btn-capturar-geo-atual" class="btn-secondary btn-success" style="width: 100%; padding: 8px; font-size: 0.78rem; margin: 6px 0 8px 0;">🎯 Capturar Localização Atual do GPS</button>
-
                     <div class="form-group" style="margin-top: 5px;">
                         <label style="font-size: 0.75rem;">Latitude do Posto:</label>
                         <input type="text" id="dev-lat-posto" placeholder="Ex: -23.550520">
@@ -166,7 +177,7 @@
                 <button id="btn-registrar" class="btn-primary">Bater Ponto Agora</button>
             </section>
 
-            <!-- OPÇÃO 4: TIMELINE / HISTÓRICO RÁPIDO NA PRÓPRIA TELA -->
+            <!-- TIMELINE E MÓDULO 4: CALCULADORA DE SALÁRIO E ADICIONAL NOTURNO -->
             <section class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h2 class="card-titulo-secundario" style="margin: 0;">Timeline de Registros</h2>
@@ -175,13 +186,16 @@
                     </div>
                 </div>
 
-                <!-- Bloco de Salário e Metas -->
                 <section class="card" style="background: #0d0e15; padding: 18px; border-radius: 14px; margin-bottom: 15px; border: 1px solid #1a1c29;">
-                    <h2 style="font-size: 0.95rem; margin-bottom: 12px; color: #39ff14; text-transform: uppercase; letter-spacing: 1.5px;">💰 Controle de Salário e Metas</h2>
+                    <h2 style="font-size: 0.95rem; margin-bottom: 12px; color: #39ff14; text-transform: uppercase; letter-spacing: 1.5px;">💰 Salário & Adicional Noturno</h2>
                     
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem; color: #8a99ad;">
                         <span>Plantões Realizados: <strong id="total-plantoes" style="color: #fff;">0</strong></span>
                         <span>Valor por Plantão: <strong id="txt-valor-plantao" style="color: #39ff14;">R$ 100,00</strong></span>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem; color: #8a99ad;">
+                        <span>Adicional Noturno Estimado: <strong id="txt-adicional-noturno" style="color: #00f0ff;">R$ 0,00</strong></span>
                     </div>
 
                     <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.85rem; color: #8a99ad;">
@@ -227,13 +241,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then((reg) => {
-                        console.log('🟢 Service Worker registrado com sucesso:', reg.scope);
-                    })
-                    .catch((err) => {
-                        console.warn('⚠️ Falha ao registrar o Service Worker:', err);
-                    });
+                navigator.serviceWorker.register('./sw.js').catch(() => {});
             });
         }
     </script>
