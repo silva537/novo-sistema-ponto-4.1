@@ -44,3 +44,24 @@ git status
 git add .
 git commit -m "Correção do link do GPS para abrir em nova aba"
 git push origin main
+git add .
+git commit -m "Correção do link do GPS para abrir em nova aba"
+git push origin main
+// BLOCO 3: REGISTRO DE PONTO, CÂMERA E SUPABASE
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    function atualizarInterfaceStatus() {         const badge = document.getElementById('status-badge');
+        const btnToggle = document.getElementById('btn-toggle-servico');
+        if (statusServico === 'true') {
+            badge.className = 'status-badge status-ativo';
+            badge.textContent = '🟢 EM SERVIÇO / EM PLANTÃO';
+            btnToggle.className = 'btn-servico-toggle btn-parar-servico';
+            btnToggle.textContent = '⏹️ SAIR / FINALIZAR SERVIÇO';
+        } else if (statusServico === 'almoco') {
+            badge.className = 'status-badge status-almoco';
+            badge.textContent = '🟡 EM HORÁRIO DE REFEIÇÃO';
+            btnToggle.className = 'btn-servico-toggle btn-iniciar-servico';
+            btnToggle.textContent = '▶️ RETORNAR AO SERVIÇO';
+        } else {
+            badge.className = 'status-badge status-inativo';
+            badge.textContent = '⚪ FORA DE SERVIÇO';
