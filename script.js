@@ -102,11 +102,30 @@ const Storage = {
         const jsonStr = JSON.stringify(registros);
         localStorage.setItem(CHAVE_STORAGE, jsonStr);
         localStorage.setItem(CHAVE_BACKUP, jsonStr);
+        
+        if (typeof StorageNuvem !== 'undefined' && StorageNuvem.salvarNaNuvem) {
+            StorageNuvem.salvarNaNuvem(item);
+        }
     },
     limpar() {
         localStorage.removeItem(CHAVE_STORAGE);
         localStorage.removeItem(CHAVE_BACKUP);
         localStorage.removeItem(CHAVE_FILA_OFFLINE);
+    }
+};
+
+window.apagarRegistroUnico = function(id) {
+    if (confirm('Deseja realmente apagar este registro específico?')) {
+        let registros = Storage.obter();
+        registros = registros.filter(item => item.id !== id);
+        
+        const jsonStr = JSON.stringify(registros);
+        localStorage.setItem(CHAVE_STORAGE, jsonStr);
+        localStorage.setItem(CHAVE_BACKUP, jsonStr);
+        
+        if (typeof renderizar === 'function') {
+            renderizar();
+        }
     }
 };
 
@@ -187,10 +206,9 @@ setInterval(() => {
     }
 }, 60000);
 // ==========================================
-// BLOCO 2: CONFIGURAÇÃO DE UI E MENU DEV COMPLETO
+// BLOCO 2: CONFIGURAÇÃO DE UI, MENU DEV E RENDERIZAÇÃO
 // ==========================================
 
-// Função global para calcular salário, metas e a sequência (streak) de plantões
 window.atualizarCalculoSalario = function() {
     let valorPorPlantao = parseFloat(localStorage.getItem(CHAVE_VALOR_PLANTAO)) || 100.00;
     let metaSalario = parseFloat(localStorage.getItem(CHAVE_META_SALARIO)) || 1000.00;
@@ -200,26 +218,21 @@ window.atualizarCalculoSalario = function() {
     const plantoesRealizados = entradas.length;
     const totalAcumulado = plantoesRealizados * valorPorPlantao;
 
-    // Cálculo da Sequência (Streak) de Plantões Consecutivos
     let streakCount = 0;
     if (entradas.length > 0) {
-        // Extrai datas únicas ordenadas da mais recente para a mais antiga
         const datasUnicas = [...new Set(entradas.map(r => r.data))];
         
-        // Função auxiliar para converter "DD/MM/AAAA" em objeto Date zerado
         const parseDataBR = (strData) => {
             const partes = strData.split('/');
             return new Date(partes[2], partes[1] - 1, partes[0]);
         };
 
         if (datasUnicas.length > 0) {
-            let dataEsperada = parseDataBR(datasUnicas[0]);
             let hoje = new Date();
             hoje.setHours(0,0,0,0);
             let ultimaData = parseDataBR(datasUnicas[0]);
             ultimaData.setHours(0,0,0,0);
 
-            // Verifica se o último plantão ocorreu hoje ou ontem para manter o streak ativo
             const diffDiasUltimo = Math.round((hoje - ultimaData) / (1000 * 60 * 60 * 24));
             
             if (diffDiasUltimo <= 1) {
@@ -246,7 +259,7 @@ window.atualizarCalculoSalario = function() {
     const elTotalSalario = document.getElementById('total-salario');
     const elTxtMeta = document.getElementById('txt-meta-salario');
     const elBarra = document.getElementById('barra-progresso-meta');
-    const elStreak = document.getElementById('streak-plantoes'); // Elemento opcional de UI para o streak
+    const elStreak = document.getElementById('streak-plantoes');
 
     if (elPlantoes) elPlantoes.textContent = plantoesRealizados;
     if (elTxtValor) elTxtValor.textContent = `R$ ${valorPorPlantao.toFixed(2).replace('.', ',')}`;
@@ -462,8 +475,74 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+window.renderizar = function() {
+    const lista = document.getElementById('lista-registros');
+    const seletorData = document.getElementById('seletor-data-historico');
+    const registros = Storage.obter();
+    lista.innerHTML = '';
+
+    if (registros.length === 0) {
+        seletorData.innerHTML = '<option value="">Sem datas</option>';
+        lista.innerHTML = '<p style="text-align:center; color:#8a99ad; font-size:0.8rem; padding:15px;">Nenhum registro.</p>';
+        
+        if (typeof window.atualizarCalculoSalario === 'function') {
+            window.atualizarCalculoSalario();
+        }
+        return;
+    }
+
+    const datasUnicas = [...new Set(registros.map(r => r.data))];
+    const dataAtual = seletorData.value && datasUnicas.includes(seletorData.value) ? seletorData.value : datasUnicas[0];
+
+    seletorData.innerHTML = '';
+    datasUnicas.forEach(data => {
+        const opt = document.createElement('option');
+        opt.value = data;
+        opt.textContent = data;
+        if (data === dataAtual) opt.selected = true;
+        seletorData.appendChild(opt);
+    });
+
+    registros.filter(r => r.data === dataAtual).forEach(item => {
+        const div = document.createElement('div');
+        div.classList.add('item-registro');
+        if (item.tipo.includes('Entrada') || item.tipo.includes('Retorno')) div.classList.add('entrada');
+        if (item.tipo.includes('Médico') || item.tipo.includes('Almoço')) div.classList.add('almoco');
+        if (item.tipo.includes('Final')) div.classList.add('saida');
+
+        const thumb = item.foto ? `<img src="${item.foto}" class="item-thumb">` : `<div style="width:45px;height:45px;background:#111;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:#555;">SEM FOTO</div>`;
+        const mapsLink = item.gps ? `<div class="item-gps"><a href="https://www.google.com/maps/search/?api=1&query=${item.gps.lat},${item.gps.lng}" target="_blank" rel="noopener noreferrer">📍 Ver Mapa</a></div>` : '';
+
+        div.innerHTML = `
+            ${thumb}
+            <div class="item-info">
+                <div class="item-header">
+                    <span>${item.tipo}</span>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <span>${item.horario}</span>
+                        <button onclick="apagarRegistroUnico(${item.id})" title="Apagar este registro" style="background: none; border: none; cursor: pointer; font-size: 0.9rem;">🗑️</button>
+                    </div>
+                </div>
+                ${item.observacao ? `<div class="item-obs">Obs: ${item.observacao}</div>` : ''}
+                ${mapsLink}
+            </div>
+        `;
+        lista.appendChild(div);
+    });
+
+    if (typeof window.atualizarCalculoSalario === 'function') {
+        window.atualizarCalculoSalario();
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const seletorDataEl = document.getElementById('seletor-data-historico');
+    if (seletorDataEl) seletorDataEl.addEventListener('change', renderizar);
+    renderizar();
+});
 // ==========================================
-// BLOCO 3: REGISTRO DE PONTO, CÂMERA E RELÓGIO
+// BLOCO 3: REGISTRO DE PONTO, CÂMERA E SUPABASE
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     function atualizarInterfaceStatus() {
@@ -555,63 +634,6 @@ document.addEventListener('DOMContentLoaded', () => {
             );
         } else salvarItem(null);
     }
-
-    window.renderizar = function() {
-        const lista = document.getElementById('lista-registros');
-        const seletorData = document.getElementById('seletor-data-historico');
-        const registros = Storage.obter();
-        lista.innerHTML = '';
-
-        if (registros.length === 0) {
-            seletorData.innerHTML = '<option value="">Sem datas</option>';
-            lista.innerHTML = '<p style="text-align:center; color:#8a99ad; font-size:0.8rem; padding:15px;">Nenhum registro.</p>';
-            
-            if (typeof window.atualizarCalculoSalario === 'function') {
-                window.atualizarCalculoSalario();
-            }
-            return;
-        }
-
-        const datasUnicas = [...new Set(registros.map(r => r.data))];
-        const dataAtual = seletorData.value && datasUnicas.includes(seletorData.value) ? seletorData.value : datasUnicas[0];
-
-        seletorData.innerHTML = '';
-        datasUnicas.forEach(data => {
-            const opt = document.createElement('option');
-            opt.value = data;
-            opt.textContent = data;
-            if (data === dataAtual) opt.selected = true;
-            seletorData.appendChild(opt);
-        });
-
-        registros.filter(r => r.data === dataAtual).forEach(item => {
-            const div = document.createElement('div');
-            div.classList.add('item-registro');
-            if (item.tipo.includes('Entrada') || item.tipo.includes('Retorno')) div.classList.add('entrada');
-            if (item.tipo.includes('Médico') || item.tipo.includes('Almoço')) div.classList.add('almoco');
-            if (item.tipo.includes('Final')) div.classList.add('saida');
-
-            const thumb = item.foto ? `<img src="${item.foto}" class="item-thumb">` : `<div style="width:45px;height:45px;background:#111;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:#555;">SEM FOTO</div>`;
-            const mapsLink = item.gps ? `<div class="item-gps"><a href="https://www.google.com/maps/search/?api=1&query=${item.gps.lat},${item.gps.lng}" target="_blank" rel="noopener noreferrer">📍 Ver Mapa</a></div>` : '';
-
-            div.innerHTML = `
-                ${thumb}
-                <div class="item-info">
-                    <div class="item-header"><span>${item.tipo}</span><span>${item.horario}</span></div>
-                    ${item.observacao ? `<div class="item-obs">Obs: ${item.observacao}</div>` : ''}
-                    ${mapsLink}
-                </div>
-            `;
-            lista.appendChild(div);
-        });
-
-        if (typeof window.atualizarCalculoSalario === 'function') {
-            window.atualizarCalculoSalario();
-        }
-    };
-    renderizar();
-
-    document.getElementById('seletor-data-historico').addEventListener('change', renderizar);
 
     document.getElementById('btn-toggle-servico').addEventListener('click', () => {
         inicializarAudioContext();
@@ -708,6 +730,7 @@ document.addEventListener('DOMContentLoaded', () => {
         registrarPontoAutomatico(document.getElementById('tipo-registro').value, document.getElementById('observacao').value.trim());
         document.getElementById('observacao').value = '';
     });
+
     document.getElementById('btn-whatsapp').addEventListener('click', () => {
         const dataFiltro = document.getElementById('seletor-data-historico').value;
         const registros = Storage.obter().filter(r => r.data === dataFiltro);
@@ -736,4 +759,70 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-limpar').addEventListener('click', () => {
         if (confirm('Deseja limpar todo o histórico?')) { Storage.limpar(); renderizar(); }
     });
+});
+
+// ==========================================
+// SUPABASE: CONFIGURAÇÃO E SINCRONIZAÇÃO EM TEMPO REAL
+// ==========================================
+
+const SUPABASE_URL = 'https://sgammtgdylghphufkidfi.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_YRz40KFT9DTNqBQooNRGPw_kpU2PhYi';
+
+let supabaseClient = null;
+
+try {
+    if (window.supabase && SUPABASE_URL) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('🟢 Supabase inicializado com sucesso!');
+    }
+} catch (erro) {
+    console.warn('⚠️ Erro ao inicializar Supabase. Operando em modo local.', erro);
+}
+
+const StorageNuvem = {
+    async salvarNaNuvem(item) {
+        if (!supabaseClient) return false;
+        try {
+            const { error } = await supabaseClient
+                .from('registros_ponto')
+                .insert([
+                    {
+                        id_unico: item.id,
+                        vigia: document.getElementById('nome-vigia')?.value || 'Não informado',
+                        posto: document.getElementById('posto-trabalho')?.value || 'Não informado',
+                        tipo: item.tipo,
+                        observacao: item.observacao,
+                        horario: item.horario,
+                        data: item.data,
+                        gps: item.gps ? JSON.stringify(item.gps) : null,
+                        foto: item.foto 
+                    }
+                ]);
+            if (error) throw error;
+            return true;
+        } catch (err) {
+            console.error('Erro ao sincronizar com Supabase:', err);
+            return false;
+        }
+    },
+
+    async sincronizarPendentes() {
+        if (!navigator.onLine || !supabaseClient) return;
+        const fila = obterFilaOffline();
+        if (fila.length === 0) return;
+
+        let novosPendentes = [];
+        for (let item of fila) {
+            const sucesso = await this.salvarNaNuvem(item);
+            if (!sucesso) {
+                novosPendentes.push(item);
+            }
+        }
+        localStorage.setItem(CHAVE_FILA_OFFLINE, JSON.stringify(novosPendentes));
+        atualizarStatusSistema();
+    }
+};
+
+window.addEventListener('online', () => {
+    StorageNuvem.sincronizarPendentes();
 });
