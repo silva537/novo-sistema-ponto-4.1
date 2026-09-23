@@ -1,0 +1,12 @@
+{
+  "background_color": "#cf0808",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "novo-sistema-ponto-4-1.vercel",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "novo-sistema-ponto-4-1.vercel",
+  "start_url": "/",
+  "theme_color": "#000000",
+  "description": "Aplicativo de sistema de ponto para vigilantes em uma fazenda de painel solar"
+}
