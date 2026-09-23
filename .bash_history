@@ -41,3 +41,6 @@ git stash pop
 git stash pop
 git push -u origin main
 git status
+git add .
+git commit -m "Correção do link do GPS para abrir em nova aba"
+git push origin main
