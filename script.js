@@ -512,7 +512,9 @@ window.renderizar = function() {
         if (item.tipo.includes('Final')) div.classList.add('saida');
 
         const thumb = item.foto ? `<img src="${item.foto}" class="item-thumb">` : `<div style="width:45px;height:45px;background:#111;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:#555;">SEM FOTO</div>`;
-        const mapsLink = item.gps ? `<div class="item-gps"><a href="https://www.google.com/maps/search/?api=1&query=${item.gps.lat},${item.gps.lng}" target="_blank" rel="noopener noreferrer">📍 Ver Mapa</a></div>` : '';
+        
+        // Link do mapa alterado para usar o protocolo geo: nativo
+        const mapsLink = item.gps ? `<div class="item-gps"><a href="geo:${item.gps.lat},${item.gps.lng}?q=${item.gps.lat},${item.gps.lng}(Posto)">📍 Ver Mapa</a></div>` : '';
 
         div.innerHTML = `
             ${thumb}
