@@ -1,18 +1,24 @@
-const CHAVE_STORAGE = 'ponto_vigia_registros';
-
-const Storage = {
-    obterRegistros() {
-        const registros = localStorage.getItem(CHAVE_STORAGE);
-        return registros ? JSON.parse(registros) : [];
-    },
-
-    salvarRegistro(novoRegistro) {
-        const registros = this.obterRegistros();
-        registros.unshift(novoRegistro); // Adiciona o mais recente no topo
-        localStorage.setItem(CHAVE_STORAGE, JSON.stringify(registros));
-    },
-
-    limpar() {
-        localStorage.removeItem(CHAVE_STORAGE);
+// storage.js - Gerenciamento de Armazenamento Local e Persistência
+class StorageManager {
+    static salvarDados(chave, dados) {
+        try {
+            localStorage.setItem(chave, JSON.stringify(dados));
+        } catch (e) {
+            console.error("Erro ao salvar no localStorage", e);
+        }
     }
-};
+
+    static carregarDados(chave) {
+        try {
+            const item = localStorage.getItem(chave);
+            return item ? JSON.parse(item) : null;
+        } catch (e) {
+            console.error("Erro ao carregar do localStorage", e);
+            return null;
+        }
+    }
+
+    static limparDados(chave) {
+        localStorage.removeItem(chave);
+    }
+}

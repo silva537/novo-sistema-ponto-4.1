@@ -195,6 +195,7 @@ window.atualizarCalculoSalario = function() {
     const plantoesRealizados = entradas.length;
     const totalAcumulado = plantoesRealizados * valorPorPlantao;
 
+    // Cálculo estimado de adicional noturno (22h às 5h)
     let adicionalNoturnoTotal = 0;
     entradas.forEach(() => {
         adicionalNoturnoTotal += 7 * 15 * 0.20; 
@@ -772,7 +773,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==========================================
 const SUPABASE_URL = 'https://sgammtgdylghphufkidfi.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_YRz40KFT9DTNqBQooNRGPw_kpU2PhYi';
-const SENHA_SUPERVISOR = "9988"; 
+const SENHA_SUPERVISOR = "9988"; // Senha para abrir o painel de supervisor
 const CHAVE_DIRETRIZ = 'ponto_vigia_diretriz_supervisor';
 
 let supabaseClient = null;
@@ -786,7 +787,7 @@ try {
     console.warn('⚠️ Erro ao inicializar Supabase. Operando em modo local.', erro);
 }
 
-// --- MÓDULO: SUPERVISÃO CORRIGIDO ---
+// --- MÓDULO: SUPERVISÃO ---
 document.addEventListener('DOMContentLoaded', () => {
     const btnMenuSup = document.getElementById('btn-menu-supervisao');
     const cardSup = document.getElementById('card-supervisao');
@@ -795,9 +796,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const textoDiretriz = document.getElementById('texto-diretriz-supervisor');
     const listaSupEquipe = document.getElementById('lista-supervisao-equipe');
     
+    // Elementos do Vigia para ver diretriz
     const bannerDiretriz = document.getElementById('banner-diretriz-vigia');
     const txtDiretrizRecebida = document.getElementById('txt-diretriz-recebida');
 
+    // Checar se há diretriz salva localmente
     const diretrizSalva = localStorage.getItem(CHAVE_DIRETRIZ);
     if (diretrizSalva && bannerDiretriz && txtDiretrizRecebida) {
         txtDiretrizRecebida.textContent = diretrizSalva;
@@ -824,6 +827,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Função para o supervisor carregar os registros recentes da equipe na nuvem
     async function carregarDadosSupervisao() {
         if (!supabaseClient) {
             listaSupEquipe.innerHTML = '<p style="color: #f1c40f; text-align:center;">Modo Offline / Sem Supabase configurado.</p>';
@@ -852,10 +856,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             listaSupEquipe.innerHTML = html;
         } catch (e) {
-            listaSupEquipe.innerHTML = '<p style="color: #ef4444; text-align:center;">Erro ao conectar à nuvem (tabela não encontrada ou offline).</p>';
+            listaSupEquipe.innerHTML = '<p style="color: #ef4444; text-align:center;">Erro ao carregar dados da nuvem.</p>';
         }
     }
 
+    // Enviar diretriz / ordem de serviço
     if (btnEnviarDiretriz && textoDiretriz) {
         btnEnviarDiretriz.addEventListener('click', async () => {
             vibrarDispositivo(40);
@@ -866,6 +871,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (txtDiretrizRecebida) txtDiretrizRecebida.textContent = diretriz;
             if (bannerDiretriz) bannerDiretriz.style.display = 'block';
 
+            // Enviar para tabela de diretrizes no Supabase se houver
             if (supabaseClient) {
                 try {
                     await supabaseClient.from('diretrizes_supervisao').insert([{
@@ -883,14 +889,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// --- MÓDULO: PASSAGEM DE PLANTÃO (LIVRO) CORRIGIDO ---
+// --- MÓDULO: PASSAGEM DE PLANTÃO ---
 document.addEventListener('DOMContentLoaded', () => {
     const txtPassagem = document.getElementById('texto-passagem-plantao');
     const btnSalvarPassagem = document.getElementById('btn-salvar-passagem');
     const painelRecado = document.getElementById('painel-recado-anterior');
     const txtRecadoLido = document.getElementById('txt-recado-lido');
 
-    // Carregar último recado salvo localmente e sincronizado
+    // Carregar último recado salvo
     const recadoSalvo = localStorage.getItem(CHAVE_PASSAGEM_PLANTAO);
     if (recadoSalvo && painelRecado && txtRecadoLido) {
         txtRecadoLido.textContent = recadoSalvo;
@@ -907,6 +913,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (txtRecadoLido) txtRecadoLido.textContent = texto;
             if (painelRecado) painelRecado.style.display = 'block';
             
+            // Sincronizar recado com o Supabase se disponível
             if (supabaseClient) {
                 try {
                     await supabaseClient.from('passagem_plantao').insert([{
