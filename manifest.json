@@ -31,7 +31,7 @@
   "screenshots": [
     {
       "src": "/print1.png",
-      "sizes": "1080x1920",
+      "sizes": "912x2003",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Tela principal do aplicativo"
