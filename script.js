@@ -712,14 +712,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnCapturar.addEventListener('click', () => {
         vibrarDispositivo(80);
-        canvas.width = 300;
-        canvas.height = 225;
+        // Diminuído para 200x150 e qualidade 0.3 para evitar Erro 500 no Supabase por excesso de peso na Base64
+        canvas.width = 200;
+        canvas.height = 150;
         canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-        fotoBase64 = canvas.toDataURL('image/jpeg', 0.6);
+        fotoBase64 = canvas.toDataURL('image/jpeg', 0.3);
         video.style.display = 'none';
         canvas.style.display = 'block';
         btnCapturar.style.display = 'none';
-        alert('Foto capturada!');
+        alert('Foto capturada e comprimida com sucesso!');
     });
 
     document.getElementById('btn-registrar').addEventListener('click', () => {
@@ -779,7 +780,6 @@ try {
     console.warn('⚠️ Erro ao inicializar Supabase.', erro);
 }
 
-// Função para atualizar visualmente o banner da diretriz na tela
 function atualizarBannerDiretriz(texto) {
     const bannerDiretriz = document.getElementById('banner-diretriz-vigia');
     const txtDiretrizRecebida = document.getElementById('txt-diretriz-recebida');
@@ -793,7 +793,6 @@ function atualizarBannerDiretriz(texto) {
     localStorage.setItem(CHAVE_DIRETRIZ, texto);
 }
 
-// Inicializar escuta em Tempo Real (Realtime) para novas diretrizes do supervisor
 function inicializarRealtimeDiretrizes() {
     if (!supabaseClient) return;
 
@@ -826,7 +825,6 @@ document.addEventListener('DOMContentLoaded', () => {
         atualizarBannerDiretriz(diretrizSalva);
     }
 
-    // Ativar o listener de tempo real ao carregar a página
     inicializarRealtimeDiretrizes();
 
     if (btnMenuSup && cardSup) {
@@ -975,9 +973,13 @@ const StorageNuvem = {
                         foto: item.foto 
                     }
                 ]);
-            if (error) throw error;
+            if (error) {
+                console.error('Erro ao salvar na nuvem:', error);
+                return false;
+            }
             return true;
         } catch (err) {
+            console.error('Exceção ao salvar na nuvem:', err);
             return false;
         }
     },
@@ -992,7 +994,7 @@ const StorageNuvem = {
             const sucesso = await this.salvarNaNuvem(item);
             if (!sucesso) novosPendentes.push(item);
         }
-        localStorage.setItem(CHAVE_FILAL_OFFLINE, JSON.stringify(novosPendentes));
+        localStorage.setItem(CHAVE_FILA_OFFLINE, JSON.stringify(novosPendentes));
         atualizarStatusSistema();
     }
 };
