@@ -1,10 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="blue">
-  <!-- SDK Oficial do Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-
 <head>
+    <!-- SDK Oficial do Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ponto Vigia Noturno Pro - Ultimate Edition</title>
@@ -37,6 +35,17 @@
             <div id="data" class="data-principal">--/--/----</div>
             <div id="status-badge" class="status-badge status-inativo">⚪ FORA DE SERVIÇO</div>
         </header>
+
+        <!-- OPÇÃO 2: PAINEL DE STATUS COM CORES DE ALERTA (STATUS CARDS) -->
+        <section class="card" style="padding: 12px 18px;">
+            <div id="status-card-painel" style="display: flex; align-items: center; gap: 12px;">
+                <div id="status-card-icone" style="font-size: 1.8rem;">⚪</div>
+                <div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Status do Plantão</div>
+                    <div id="status-card-texto" style="font-size: 0.95rem; font-weight: 700; color: #fff;">Fora de Serviço</div>
+                </div>
+            </div>
+        </section>
 
         <main>
             <section class="card">
@@ -157,9 +166,10 @@
                 <button id="btn-registrar" class="btn-primary">Bater Ponto Agora</button>
             </section>
 
+            <!-- OPÇÃO 4: TIMELINE / HISTÓRICO RÁPIDO NA PRÓPRIA TELA -->
             <section class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <h2 class="card-titulo-secundario" style="margin: 0;">Registros do Turno</h2>
+                    <h2 class="card-titulo-secundario" style="margin: 0;">Timeline de Registros</h2>
                     <div class="form-group" style="margin: 0; width: 130px;">
                         <select id="seletor-data-historico" style="padding: 6px; font-size: 0.75rem;"></select>
                     </div>
@@ -189,7 +199,7 @@
                     </div>
                 </section>
 
-                <div id="lista-registros" class="lista-registros"></div>
+                <div id="lista-registros" class="lista-registros timeline-container"></div>
 
                 <div class="btn-group-grid" style="margin-top: 10px;">
                     <button id="btn-whatsapp" class="btn-secondary">Enviar WhatsApp</button>
@@ -213,20 +223,19 @@
         </footer>
     </div>
 
-    <!-- Script único correspondente -->
     <script src="script.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then((reg) => {
-                    console.log('🟢 Service Worker registrado com sucesso:', reg.scope);
-                })
-                .catch((err) => {
-                    console.warn('⚠️ Falha ao registrar o Service Worker:', err);
-                });
-        });
-    }
-</script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((reg) => {
+                        console.log('🟢 Service Worker registrado com sucesso:', reg.scope);
+                    })
+                    .catch((err) => {
+                        console.warn('⚠️ Falha ao registrar o Service Worker:', err);
+                    });
+            });
+        }
+    </script>
 </body>
 </html>

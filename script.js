@@ -16,6 +16,17 @@ const SENHA_DEV = "3691";
 
 let tempoRondaSegundos = parseInt(localStorage.getItem(CHAVE_DEV_TEMPO), 10) || 3600;
 
+// OPÇÃO 5: Função utilitária para Feedback Tátil (Vibração nativa)
+function vibrarDispositivo(padrao = 50) {
+    if ("vibrate" in navigator) {
+        try {
+            navigator.vibrate(padrao);
+        } catch (e) {
+            console.warn("Vibração bloqueada pelo navegador.");
+        }
+    }
+}
+
 function aplicarTema(tema) {
     document.documentElement.setAttribute('data-theme', tema);
     localStorage.setItem(CHAVE_TEMA, tema);
@@ -116,6 +127,7 @@ const Storage = {
 
 window.apagarRegistroUnico = function(id) {
     if (confirm('Deseja realmente apagar este registro específico?')) {
+        vibrarDispositivo([40, 40, 40]);
         let registros = Storage.obter();
         registros = registros.filter(item => item.id !== id);
         
@@ -198,6 +210,7 @@ setInterval(() => {
             const distancia = calcularDistanciaMetros(configGeo.lat, configGeo.lng, pos.coords.latitude, pos.coords.longitude);
             if (distancia > configGeo.raio) {
                 tocarAlarme();
+                vibrarDispositivo([200, 100, 200]);
                 if ("Notification" in window && Notification.permission === "granted") {
                     new Notification("🚨 ALERTA DE AFASTAMENTO!", { body: `Você saiu do raio do posto! Distância: ${Math.round(distancia)}m` });
                 }
@@ -293,6 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCapturarGeoAtual = document.getElementById('btn-capturar-geo-atual');
     if (btnCapturarGeoAtual) {
         btnCapturarGeoAtual.addEventListener('click', () => {
+            vibrarDispositivo(40);
             if (!("geolocation" in navigator)) return alert('Geolocalização não suportada.');
             btnCapturarGeoAtual.textContent = '⏳ Obtendo GPS...';
             btnCapturarGeoAtual.disabled = true;
@@ -302,6 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('dev-lng-posto').value = pos.coords.longitude;
                 btnCapturarGeoAtual.textContent = '🎯 Capturar Localização Atual do GPS';
                 btnCapturarGeoAtual.disabled = false;
+                vibrarDispositivo([50, 50, 50]);
                 alert('✅ Coordenadas capturadas com sucesso!');
             }, (err) => {
                 btnCapturarGeoAtual.textContent = '🎯 Capturar Localização Atual do GPS';
@@ -314,6 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSalvarGeo = document.getElementById('btn-salvar-geofencing');
     if (btnSalvarGeo) {
         btnSalvarGeo.addEventListener('click', () => {
+            vibrarDispositivo(40);
             const lat = parseFloat(document.getElementById('dev-lat-posto').value);
             const lng = parseFloat(document.getElementById('dev-lng-posto').value);
             const raio = parseFloat(document.getElementById('dev-raio-posto').value) || 200;
@@ -326,6 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnAjustarValor = document.getElementById('btn-ajustar-valor');
     if (btnAjustarValor) {
         btnAjustarValor.addEventListener('click', () => {
+            vibrarDispositivo(40);
             const novoValor = prompt(`Valor por plantão (Atual: R$ ${valorPorPlantao}):`, valorPorPlantao);
             if (novoValor !== null) {
                 const parsed = parseFloat(novoValor.replace(',', '.'));
@@ -342,6 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnAjustarMeta = document.getElementById('btn-ajustar-meta');
     if (btnAjustarMeta) {
         btnAjustarMeta.addEventListener('click', () => {
+            vibrarDispositivo(40);
             const novaMeta = prompt(`Meta salarial (Atual: R$ ${metaSalario}):`, metaSalario);
             if (novaMeta !== null) {
                 const parsed = parseFloat(novaMeta.replace(',', '.'));
@@ -361,10 +379,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('posto-trabalho').addEventListener('input', (e) => localStorage.setItem('vigia_posto', e.target.value));
 
     document.getElementById('btn-desbloquear-manutencao').addEventListener('click', () => {
+        vibrarDispositivo(40);
         const senha = prompt('🔒 Senha de admin:');
         if (senha === SENHA_DEV) {
             localStorage.setItem(CHAVE_MANUTENCAO, 'false');
             document.getElementById('tela-manutencao').style.display = 'none';
+            vibrarDispositivo([80, 80]);
             alert('✅ Acesso liberado!');
         } else if (senha !== null) alert('❌ Senha incorreta!');
     });
@@ -372,6 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnHamburguer = document.getElementById('btn-menu-hamburguer');
     const cardDev = document.getElementById('card-dev');
     btnHamburguer.addEventListener('click', () => {
+        vibrarDispositivo(30);
         if (cardDev.style.display === 'none' || cardDev.style.display === '') {
             const senhaDigitada = prompt('🔒 Senha do Menu Dev:');
             if (senhaDigitada === SENHA_DEV) {
@@ -390,12 +411,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     atualizarTextoBtnManutencao();
     btnToggleManutencao.addEventListener('click', () => {
+        vibrarDispositivo(40);
         localStorage.setItem(CHAVE_MANUTENCAO, !(localStorage.getItem(CHAVE_MANUTENCAO) === 'true'));
         checarManutencao();
         atualizarTextoBtnManutencao();
     });
 
     document.getElementById('btn-dev-exportar-json').addEventListener('click', () => {
+        vibrarDispositivo(40);
         const dados = Storage.obter();
         if (dados.length === 0) return alert('Sem registros!');
         const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
@@ -417,6 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (Array.isArray(dadosImportados)) {
                     localStorage.setItem(CHAVE_STORAGE, JSON.stringify(dadosImportados));
                     renderizar();
+                    vibrarDispositivo([60, 60]);
                     alert('✅ Backup restaurado!');
                 } else alert('JSON inválido.');
             } catch (err) { alert('Erro: ' + err.message); }
@@ -435,6 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnDev10s = document.getElementById('btn-dev-10s');
     if (btnDev10s) {
         btnDev10s.addEventListener('click', () => {
+            vibrarDispositivo(40);
             tempoRondaSegundos = 10;
             localStorage.setItem(CHAVE_DEV_TEMPO, 10);
             if(document.getElementById('dev-tempo-ronda')) document.getElementById('dev-tempo-ronda').value = 10;
@@ -446,6 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnDevDisparar = document.getElementById('btn-dev-disparar');
     if (btnDevDisparar) {
         btnDevDisparar.addEventListener('click', () => {
+            vibrarDispositivo([100, 50, 100]);
             localStorage.setItem(CHAVE_PROXIMA_RONDA, Date.now() - 1000);
             tocarAlarme();
             alert('🚨 Alerta de ronda simulado com sucesso!');
@@ -455,6 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnDevMock = document.getElementById('btn-dev-mock');
     if (btnDevMock) {
         btnDevMock.addEventListener('click', () => {
+            vibrarDispositivo(40);
             const mocks = [
                 { id: Date.now() - 3600000, tipo: "Entrada de Serviço", observacao: "Início de plantão teste", horario: "22:00", data: "21/09/2026", gps: null, foto: null },
                 { id: Date.now() - 1800000, tipo: "Confirmar Plantão / Foto", observacao: "Ronda ok", horario: "23:00", data: "21/09/2026", gps: null, foto: null }
@@ -466,8 +493,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const btnDevReset = document.getElementById('btn-dev-reset');
-    if (btnDevReset) {
+    if (btnDevDevReset => btnDevReset) {
         btnDevReset.addEventListener('click', () => {
+            vibrarDispositivo([100, 100]);
             if (confirm('⚠️ Tem certeza que deseja resetar todas as configurações e dados salvos?')) {
                 localStorage.clear();
                 location.reload();
@@ -512,8 +540,6 @@ window.renderizar = function() {
         if (item.tipo.includes('Final')) div.classList.add('saida');
 
         const thumb = item.foto ? `<img src="${item.foto}" class="item-thumb">` : `<div style="width:45px;height:45px;background:#111;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:#555;">SEM FOTO</div>`;
-        
-        // Link do mapa alterado para usar o protocolo geo: nativo
         const mapsLink = item.gps ? `<div class="item-gps"><a href="geo:${item.gps.lat},${item.gps.lng}?q=${item.gps.lat},${item.gps.lng}(Posto)">📍 Ver Mapa</a></div>` : '';
 
         div.innerHTML = `
@@ -550,27 +576,54 @@ document.addEventListener('DOMContentLoaded', () => {
     function atualizarInterfaceStatus() {
         const badge = document.getElementById('status-badge');
         const btnToggle = document.getElementById('btn-toggle-servico');
+        
+        // OPÇÃO 2: Atualização dos Cartões Dinâmicos de Status no Topo
+        const cardPainel = document.getElementById('status-card-painel');
+        const cardIcone = document.getElementById('status-card-icone');
+        const cardTexto = document.getElementById('status-card-texto');
 
         if (statusServico === 'true') {
             badge.className = 'status-badge status-ativo';
             badge.textContent = '🟢 EM SERVIÇO / EM PLANTÃO';
             btnToggle.className = 'btn-servico-toggle btn-parar-servico';
             btnToggle.textContent = '⏹️ SAIR / FINALIZAR SERVIÇO';
+            
+            if (cardPainel) {
+                cardPainel.style.borderLeft = '4px solid #10b981';
+                cardIcone.textContent = '🟢';
+                cardTexto.textContent = 'Em Serviço / Plantão Ativo';
+                cardTexto.style.color = '#10b981';
+            }
         } else if (statusServico === 'almoco') {
             badge.className = 'status-badge status-almoco';
             badge.textContent = '🟡 EM HORÁRIO DE REFEIÇÃO';
             btnToggle.className = 'btn-servico-toggle btn-iniciar-servico';
             btnToggle.textContent = '▶️ RETORNAR AO SERVIÇO';
+            
+            if (cardPainel) {
+                cardPainel.style.borderLeft = '4px solid #f59e0b';
+                cardIcone.textContent = '🟡';
+                cardTexto.textContent = 'Em Horário de Refeição';
+                cardTexto.style.color = '#f59e0b';
+            }
         } else {
             badge.className = 'status-badge status-inativo';
             badge.textContent = '⚪ FORA DE SERVIÇO';
             btnToggle.className = 'btn-servico-toggle btn-iniciar-servico';
             btnToggle.textContent = '▶️ ENTRAR EM SERVIÇO';
+            
+            if (cardPainel) {
+                cardPainel.style.borderLeft = '4px solid #6b7280';
+                cardIcone.textContent = '⚪';
+                cardTexto.textContent = 'Fora de Serviço';
+                cardTexto.style.color = '#9ca3af';
+            }
         }
     }
     atualizarInterfaceStatus();
 
     function registrarPontoAutomatico(tipo, obs = "") {
+        vibrarDispositivo([60, 60]); // OPÇÃO 5: Vibração ao bater ponto
         const agora = new Date();
         const h = String(agora.getHours()).padStart(2, '0');
         const m = String(agora.getMinutes()).padStart(2, '0');
@@ -679,6 +732,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!cardElem.classList.contains('ronda-alerta')) {
                 cardElem.classList.add('ronda-alerta');
                 tocarAlarme();
+                vibrarDispositivo([150, 100, 150]);
                 if ("Notification" in window && Notification.permission === "granted") {
                     new Notification("⏰ HORA DA FOTO NO GRUPO!", { 
                         body: "Já passou o tempo! Envie a foto no grupo e confirme no app.",
@@ -690,6 +744,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 1000);
 
     document.getElementById('btn-confirmar-ronda').addEventListener('click', () => {
+        vibrarDispositivo(50);
         inicializarAudioContext();
         if (statusServico !== 'true') return alert('Você precisa estar em serviço!');
         resetarTimerRonda();
@@ -705,6 +760,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cameraBox = document.getElementById('camera-box');
 
     document.getElementById('btn-abrir-camera').addEventListener('click', async () => {
+        vibrarDispositivo(40);
         try {
             streamCamera = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } });
             video.srcObject = streamCamera;
@@ -717,6 +773,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnCapturar.addEventListener('click', () => {
+        vibrarDispositivo(80);
         canvas.width = 300;
         canvas.height = 225;
         canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -734,6 +791,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-whatsapp').addEventListener('click', () => {
+        vibrarDispositivo(40);
         const dataFiltro = document.getElementById('seletor-data-historico').value;
         const registros = Storage.obter().filter(r => r.data === dataFiltro);
         if (registros.length === 0) return alert('Sem registros!');
@@ -747,6 +805,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-excel').addEventListener('click', () => {
+        vibrarDispositivo(40);
         const registros = Storage.obter();
         if (registros.length === 0) return alert('Sem registros!');
         let csv = 'Data,Horario,Tipo,Observacao\n';
@@ -757,14 +816,14 @@ document.addEventListener('DOMContentLoaded', () => {
         a.click();
     });
 
-    document.getElementById('btn-imprimir').addEventListener('click', () => window.print());
+    document.getElementById('btn-imprimir').addEventListener('click', () => { vibrarDispositivo(40); window.print(); });
     document.getElementById('btn-limpar').addEventListener('click', () => {
+        vibrarDispositivo([100, 50, 100]);
         if (confirm('Deseja limpar todo o histórico?')) { Storage.limpar(); renderizar(); }
     });
 });
-
 // ==========================================
-// SUPABASE: CONFIGURAÇÃO E SINCRONIZAÇÃO EM TEMPO REAL
+// BLOCO 4: SUPABASE E SINCRONIZAÇÃO EM TEMPO REAL
 // ==========================================
 
 const SUPABASE_URL = 'https://sgammtgdylghphufkidfi.supabase.co';
