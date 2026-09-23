@@ -195,7 +195,6 @@ window.atualizarCalculoSalario = function() {
     const plantoesRealizados = entradas.length;
     const totalAcumulado = plantoesRealizados * valorPorPlantao;
 
-    // Cálculo estimado de adicional noturno (22h às 5h)
     let adicionalNoturnoTotal = 0;
     entradas.forEach(() => {
         adicionalNoturnoTotal += 7 * 15 * 0.20; 
@@ -773,7 +772,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==========================================
 const SUPABASE_URL = 'https://sgammtgdylghphufkidfi.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_YRz40KFT9DTNqBQooNRGPw_kpU2PhYi';
-const SENHA_SUPERVISOR = "9988"; // Senha para abrir o painel de supervisor
+const SENHA_SUPERVISOR = "9988"; 
 const CHAVE_DIRETRIZ = 'ponto_vigia_diretriz_supervisor';
 
 let supabaseClient = null;
@@ -796,11 +795,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const textoDiretriz = document.getElementById('texto-diretriz-supervisor');
     const listaSupEquipe = document.getElementById('lista-supervisao-equipe');
     
-    // Elementos do Vigia para ver diretriz
     const bannerDiretriz = document.getElementById('banner-diretriz-vigia');
     const txtDiretrizRecebida = document.getElementById('txt-diretriz-recebida');
 
-    // Checar se há diretriz salva localmente
     const diretrizSalva = localStorage.getItem(CHAVE_DIRETRIZ);
     if (diretrizSalva && bannerDiretriz && txtDiretrizRecebida) {
         txtDiretrizRecebida.textContent = diretrizSalva;
@@ -827,7 +824,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Função para o supervisor carregar os registros recentes da equipe na nuvem
     async function carregarDadosSupervisao() {
         if (!supabaseClient) {
             listaSupEquipe.innerHTML = '<p style="color: #f1c40f; text-align:center;">Modo Offline / Sem Supabase configurado.</p>';
@@ -860,7 +856,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Enviar diretriz / ordem de serviço
     if (btnEnviarDiretriz && textoDiretriz) {
         btnEnviarDiretriz.addEventListener('click', async () => {
             vibrarDispositivo(40);
@@ -871,7 +866,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (txtDiretrizRecebida) txtDiretrizRecebida.textContent = diretriz;
             if (bannerDiretriz) bannerDiretriz.style.display = 'block';
 
-            // Enviar para tabela de diretrizes no Supabase se houver
             if (supabaseClient) {
                 try {
                     await supabaseClient.from('diretrizes_supervisao').insert([{
@@ -896,7 +890,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const painelRecado = document.getElementById('painel-recado-anterior');
     const txtRecadoLido = document.getElementById('txt-recado-lido');
 
-    // Carregar último recado salvo
     const recadoSalvo = localStorage.getItem(CHAVE_PASSAGEM_PLANTAO);
     if (recadoSalvo && painelRecado && txtRecadoLido) {
         txtRecadoLido.textContent = recadoSalvo;
@@ -913,7 +906,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (txtRecadoLido) txtRecadoLido.textContent = texto;
             if (painelRecado) painelRecado.style.display = 'block';
             
-            // Sincronizar recado com o Supabase se disponível
             if (supabaseClient) {
                 try {
                     await supabaseClient.from('passagem_plantao').insert([{
