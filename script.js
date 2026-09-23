@@ -761,7 +761,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 // ==========================================
-// BLOCO 4: SUPABASE, SUPERVISÃO E PASSAGEM DE PLANTÃO
+// BLOCO 4: SUPABASE, SUPERVISÃO, REALTIME E PASSAGEM DE PLANTÃO
 // ==========================================
 const SUPABASE_URL = 'https://sgammtgdylghphufkidfi.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_YRz40KFT9DTNqBQooNRGPw_kpU2PhYi';
@@ -773,8 +773,45 @@ let supabaseClient = null;
 try {
     if (window.supabase && SUPABASE_URL) {
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('🟢 Supabase inicializado com sucesso!');
     }
-} catch (erro) {}
+} catch (erro) {
+    console.warn('⚠️ Erro ao inicializar Supabase.', erro);
+}
+
+// Função para atualizar visualmente o banner da diretriz na tela
+function atualizarBannerDiretriz(texto) {
+    const bannerDiretriz = document.getElementById('banner-diretriz-vigia');
+    const txtDiretrizRecebida = document.getElementById('txt-diretriz-recebida');
+    
+    if (txtDiretrizRecebida) {
+        txtDiretrizRecebida.textContent = texto;
+    }
+    if (bannerDiretriz) {
+        bannerDiretriz.style.display = 'block';
+    }
+    localStorage.setItem(CHAVE_DIRETRIZ, texto);
+}
+
+// Inicializar escuta em Tempo Real (Realtime) para novas diretrizes do supervisor
+function inicializarRealtimeDiretrizes() {
+    if (!supabaseClient) return;
+
+    supabaseClient
+        .channel('public:diretrizes_supervisao')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'diretrizes_supervisao' }, payload => {
+            if (payload && payload.new && payload.new.mensagem) {
+                atualizarBannerDiretriz(payload.new.mensagem);
+                vibrarDispositivo([100, 50, 100]);
+                if ("Notification" in window && Notification.permission === "granted") {
+                    new Notification("📢 Nova Diretriz da Supervisão", { body: payload.new.mensagem });
+                }
+            }
+        })
+        .subscribe((status) => {
+            console.log('Status Realtime Diretrizes:', status);
+        });
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     const btnMenuSup = document.getElementById('btn-menu-supervisao');
@@ -784,14 +821,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const textoDiretriz = document.getElementById('texto-diretriz-supervisor');
     const listaSupEquipe = document.getElementById('lista-supervisao-equipe');
     
-    const bannerDiretriz = document.getElementById('banner-diretriz-vigia');
-    const txtDiretrizRecebida = document.getElementById('txt-diretriz-recebida');
-
     const diretrizSalva = localStorage.getItem(CHAVE_DIRETRIZ);
-    if (diretrizSalva && bannerDiretriz && txtDiretrizRecebida) {
-        txtDiretrizRecebida.textContent = diretrizSalva;
-        bannerDiretriz.style.display = 'block';
+    if (diretrizSalva) {
+        atualizarBannerDiretriz(diretrizSalva);
     }
+
+    // Ativar o listener de tempo real ao carregar a página
+    inicializarRealtimeDiretrizes();
 
     if (btnMenuSup && cardSup) {
         btnMenuSup.addEventListener('click', () => {
@@ -851,21 +887,30 @@ document.addEventListener('DOMContentLoaded', () => {
             const diretriz = textoDiretriz.value.trim();
             if (!diretriz) return alert('Digite a diretriz para a equipe!');
 
-            localStorage.setItem(CHAVE_DIRETRIZ, diretriz);
-            if (txtDiretrizRecebida) txtDiretrizRecebida.textContent = diretriz;
-            if (bannerDiretriz) bannerDiretriz.style.display = 'block';
+            atualizarBannerDiretriz(diretriz);
 
             if (supabaseClient) {
                 try {
-                    await supabaseClient.from('diretrizes_supervisao').insert([{
+                    const { error } = await supabaseClient.from('diretrizes_supervisao').insert([{
                         mensagem: diretriz,
                         criado_em: new Date().toISOString()
                     }]);
-                } catch (e) {}
+                    
+                    if (error) {
+                        console.error('Erro detalhado Supabase:', error);
+                        alert('⚠️ Erro ao salvar na nuvem: ' + error.message);
+                    } else {
+                        alert('✅ Diretriz enviada e salva na nuvem com sucesso!');
+                    }
+                } catch (e) {
+                    console.error('Exceção ao enviar:', e);
+                    alert('❌ Falha de conexão com o Supabase.');
+                }
+            } else {
+                alert('⚠️ Supabase não configurado neste ambiente.');
             }
 
             textoDiretriz.value = '';
-            alert('✅ Diretriz transmitida com sucesso para a equipe!');
         });
     }
 });
@@ -947,7 +992,7 @@ const StorageNuvem = {
             const sucesso = await this.salvarNaNuvem(item);
             if (!sucesso) novosPendentes.push(item);
         }
-        localStorage.setItem(CHAVE_FILA_OFFLINE, JSON.stringify(novosPendentes));
+        localStorage.setItem(CHAVE_FILAL_OFFLINE, JSON.stringify(novosPendentes));
         atualizarStatusSistema();
     }
 };
