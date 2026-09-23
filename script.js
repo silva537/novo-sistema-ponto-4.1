@@ -184,7 +184,7 @@ function resetarTimerRonda(segundosCustom = null) {
     localStorage.setItem(CHAVE_PROXIMA_RONDA, proximaRonda);
 }
 // ==========================================
-// BLOCO 2: UI, MENU DEV, CÁLCULO DE ADICIONAL E RENDERIZAÇÃO
+// BLOCO 2: CONFIGURAÇÃO DE UI, MENU DEV E RENDERIZAÇÃO
 // ==========================================
 window.atualizarCalculoSalario = function() {
     let valorPorPlantao = parseFloat(localStorage.getItem(CHAVE_VALOR_PLANTAO)) || 100.00;
@@ -195,25 +195,18 @@ window.atualizarCalculoSalario = function() {
     const plantoesRealizados = entradas.length;
     const totalAcumulado = plantoesRealizados * valorPorPlantao;
 
-    let adicionalNoturnoTotal = 0;
-    entradas.forEach(() => {
-        adicionalNoturnoTotal += 7 * 15 * 0.20; 
-    });
-
     const elPlantoes = document.getElementById('total-plantoes');
     const elTxtValor = document.getElementById('txt-valor-plantao');
     const elTotalSalario = document.getElementById('total-salario');
     const elTxtMeta = document.getElementById('txt-meta-salario');
     const elBarra = document.getElementById('barra-progresso-meta');
-    const elAdicional = document.getElementById('txt-adicional-noturno');
 
     if (elPlantoes) elPlantoes.textContent = plantoesRealizados;
     if (elTxtValor) elTxtValor.textContent = `R$ ${valorPorPlantao.toFixed(2).replace('.', ',')}`;
-    if (elTotalSalario) elTotalSalario.textContent = `R$ ${(totalAcumulado + adicionalNoturnoTotal).toFixed(2).replace('.', ',')}`;
+    if (elTotalSalario) elTotalSalario.textContent = `R$ ${totalAcumulado.toFixed(2).replace('.', ',')}`;
     if (elTxtMeta) elTxtMeta.textContent = `R$ ${metaSalario.toFixed(2).replace('.', ',')}`;
-    if (elAdicional) elAdicional.textContent = `R$ ${adicionalNoturnoTotal.toFixed(2).replace('.', ',')}`;
 
-    let progresso = metaSalario > 0 ? ((totalAcumulado + adicionalNoturnoTotal) / metaSalario) * 100 : 0;
+    let progresso = metaSalario > 0 ? (totalAcumulado / metaSalario) * 100 : 0;
     if (progresso > 100) progresso = 100;
     if (elBarra) elBarra.style.width = `${progresso}%`;
 };
@@ -455,7 +448,7 @@ window.renderizar = function() {
         if (item.tipo.includes('Final')) div.classList.add('saida');
 
         const thumb = item.foto ? `<img src="${item.foto}" class="item-thumb">` : `<div style="width:45px;height:45px;background:#111;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:#555;">SEM FOTO</div>`;
-        const mapsLink = item.gps ? `<div class="item-gps"><a href="https://maps.google.com/?q=${item.gps.lat},${item.gps.lng}" target="_blank">📍 Ver Mapa</a></div>` : '';
+        const mapsLink = item.gps ? `<div class="item-gps"><a href="https://www.google.com/maps/search/?api=1&query=${item.gps.lat},${item.gps.lng}" target="_blank" rel="noopener noreferrer">📍 Ver Mapa</a></div>` : '';
 
         div.innerHTML = `
             ${thumb}
@@ -483,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderizar();
 });
 // ==========================================
-// BLOCO 3: REGISTRO DE PONTO, CÂMERA, GEOFENCING E MODO PÂNICO
+// BLOCO 3: REGISTRO DE PONTO, CÂMERA, GEOFENCING E PÂNICO
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     function atualizarInterfaceStatus() {
@@ -768,7 +761,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 // ==========================================
-// BLOCO 4: SUPABASE, MENU DE SUPERVISÃO E PASSAGEM DE PLANTÃO
+// BLOCO 4: SUPABASE, SUPERVISÃO E PASSAGEM DE PLANTÃO
 // ==========================================
 const SUPABASE_URL = 'https://sgammtgdylghphufkidfi.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_YRz40KFT9DTNqBQooNRGPw_kpU2PhYi';
@@ -780,13 +773,9 @@ let supabaseClient = null;
 try {
     if (window.supabase && SUPABASE_URL) {
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log('🟢 Supabase inicializado com sucesso!');
     }
-} catch (erro) {
-    console.warn('⚠️ Erro ao inicializar Supabase. Operando em modo local.', erro);
-}
+} catch (erro) {}
 
-// --- MÓDULO: SUPERVISÃO ---
 document.addEventListener('DOMContentLoaded', () => {
     const btnMenuSup = document.getElementById('btn-menu-supervisao');
     const cardSup = document.getElementById('card-supervisao');
@@ -872,9 +861,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         mensagem: diretriz,
                         criado_em: new Date().toISOString()
                     }]);
-                } catch (e) {
-                    console.warn('Erro ao salvar diretriz na nuvem', e);
-                }
+                } catch (e) {}
             }
 
             textoDiretriz.value = '';
@@ -914,9 +901,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         recado: texto,
                         criado_em: new Date().toISOString()
                     }]);
-                } catch (e) {
-                    console.warn('Erro ao enviar passagem de plantão para nuvem', e);
-                }
+                } catch (e) {}
             }
 
             txtPassagem.value = '';
@@ -925,7 +910,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// --- MÓDULO: STORAGE NA NUVEM ---
+// --- STORAGE NA NUVEM ---
 const StorageNuvem = {
     async salvarNaNuvem(item) {
         if (!supabaseClient) return false;
@@ -948,7 +933,6 @@ const StorageNuvem = {
             if (error) throw error;
             return true;
         } catch (err) {
-            console.error('Erro ao sincronizar com Supabase:', err);
             return false;
         }
     },
