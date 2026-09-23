@@ -8,5 +8,10 @@
   "short_name": "novo-sistema-ponto-4-1.vercel",
   "start_url": "/",
   "theme_color": "#000000",
-  "description": "Aplicativo de sistema de ponto para vigilantes em uma fazenda de painel solar"
+  "description": "Aplicativo de sistema de ponto para vigilantes em uma fazenda de painel solar",
+  "categories": [
+    "government",
+    "graphics",
+    "security"
+  ]
 }
